@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ragclaw 系统架构流程图</title>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #0f172a;
+    color: #e2e8f0;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    padding: 2rem;
+  }
+  .container { max-width: 1400px; margin: 0 auto; }
+  h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    background: linear-gradient(135deg, #818cf8, #38bdf8);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .subtitle {
+    color: #94a3b8;
+    margin-bottom: 2.5rem;
+    font-size: 0.95rem;
+  }
+  .diagram-card {
+    background: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 16px;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.3);
+  }
+  .diagram-card h2 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    color: #f1f5f9;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .diagram-card h2 .badge {
+    font-size: 0.7rem;
+    font-weight: 500;
+    background: #334155;
+    color: #94a3b8;
+    padding: 0.15rem 0.6rem;
+    border-radius: 10px;
+  }
+  .mermaid {
+    background: #1e293b;
+    border-radius: 12px;
+    display: flex;
+    justify-content: center;
+  }
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid #334155;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.8rem;
+    color: #94a3b8;
+  }
+  .legend-color {
+    width: 14px;
+    height: 14px;
+    border-radius: 4px;
+  }
+  @media (max-width: 768px) {
+    body { padding: 1rem; }
+    .diagram-card { padding: 1rem; }
+    .legend { gap: 0.8rem; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>Ragclaw 系统架构</h1>
+  <p class="subtitle">Skill-First Hybrid RAG — 本地优先、文件可观测、可审计的 Agent 工作台</p>
+
+  <!-- 1. 整体系统架构 -->
+  <div class="diagram-card">
+    <h2>1. 整体系统架构 <span class="badge">System Overview</span></h2>
+    <div class="mermaid">
+flowchart TB
+    subgraph Frontend["🌐 前端 (Next.js 14 + TypeScript + Tailwind)"]
+        direction TB
+        F1["Chat Panel<br/>流式对话"]
+        F2["Inspector Panel<br/>检索证据 / 工具调用 / Raw Messages"]
+        F3["File Editor<br/>Monaco Editor"]
+        F4["Navbar<br/>新会话 / RAG 开关 / 重建索引"]
+    end
+
+    subgraph API["🔌 API 层 (FastAPI)"]
+        direction LR
+        A1["/api/chat<br/>SSE 流式"]
+        A2["/api/sessions<br/>会话 CRUD"]
+        A3["/api/files<br/>文件操作"]
+        A4["/api/tokens<br/>Token 压缩"]
+        A5["/api/config/rag-mode<br/>RAG 模式切换"]
+        A6["/api/knowledge/index<br/>索引状态 / 重建"]
+    end
+
+    subgraph Backend["⚙️ 后端核心"]
+        direction TB
+        B1["graph/agent.py<br/>AgentManager<br/>LangChain Agent 流式编排"]
+        B2["graph/prompt_builder.py<br/>系统提示词组装<br/>(SOUL+IDENTITY+USER+AGENTS)"]
+        B3["graph/session_manager.py<br/>会话持久化<br/>sessions/*.json"]
+        B4["graph/memory_indexer.py<br/>LlamaIndex 向量索引<br/>memory/MEMORY.md"]
+    end
+
+    subgraph Retrieval["🔍 知识检索 (Skill-First Hybrid RAG)"]
+        direction TB
+        R1["knowledge_retrieval/orchestrator.py<br/>KnowledgeOrchestrator<br/>编排 skiil → hybrid 流程"]
+        R2["knowledge_retrieval/skill_retriever_agent.py<br/>SkillRetrieverAgent<br/>读 SKILL.md → 知识文件检索"]
+        R3["knowledge_retrieval/hybrid_retriever.py<br/>向量 + BM25 并行召回"]
+        R4["knowledge_retrieval/indexer.py<br/>知识索引构建 / 加载"]
+        R5["knowledge_retrieval/fusion.py<br/>RRF 融合"]
+    end
+
+    subgraph Tools["🛠️ 工具层"]
+        T1["terminal_tool.py"]
+        T2["python_repl_tool.py"]
+        T3["read_file_tool.py"]
+        T4["fetch_url_tool.py"]
+        T5["skills_scanner.py<br/>→ SKILLS_SNAPSHOT.md"]
+    end
+
+    subgraph Storage["💾 持久化存储"]
+        S1["📁 sessions/*.json<br/>会话历史"]
+        S2["📁 memory/MEMORY.md<br/>长期记忆"]
+        S3["📁 knowledge/*<br/>本地知识库文件"]
+        S4["📁 skills/*/SKILL.md<br/>技能定义"]
+        S5["📁 workspace/<br/>SOUL / IDENTITY / USER / AGENTS"]
+        S6["📁 storage/knowledge/<br/>向量索引 + BM25 索引"]
+    end
+
+    Frontend <-->|HTTP / SSE| API
+    API --> Backend
+    Backend --> Retrieval
+    Retrieval --> Tools
+    Backend --> Storage
+    Retrieval --> Storage
+    Tools --> Storage
+
+    classDef frontend fill:#1e3a5f,stroke:#38bdf8,color:#e0f2fe;
+    classDef api fill:#3b0764,stroke:#a855f7,color:#f3e8ff;
+    classDef backend fill:#1a3a2a,stroke:#22c55e,color:#dcfce7;
+    classDef retrieval fill:#3b1f0a,stroke:#f97316,color:#fff7ed;
+    classDef tools fill:#2d1b2e,stroke:#ec4899,color:#fce7f3;
+    classDef storage fill:#1e293b,stroke:#64748b,color:#f1f5f9;
+    classDef frontend fill:#0c4a6e,stroke:#38bdf8,color:#e0f2fe;
+    classDef api fill:#4c1d95,stroke:#a855f7,color:#f3e8ff;
+    classDef backend fill:#14532d,stroke:#22c55e,color:#dcfce7;
+    classDef retrieval fill:#7c2d12,stroke:#f97316,color:#fff7ed;
+    classDef tools fill:#831843,stroke:#ec4899,color:#fce7f3;
+    classDef storage fill:#334155,stroke:#64748b,color:#f1f5f9;
+
+    class F1,F2,F3,F4 frontend;
+    class A1,A2,A3,A4,A5,A6 api;
+    class B1,B2,B3,B4 backend;
+    class R1,R2,R3,R4,R5 retrieval;
+    class T1,T2,T3,T4,T5 tools;
+    class S1,S2,S3,S4,S5,S6 storage;
+    </div>
+  </div>
+
+  <!-- 2. 检索管线 -->
+  <div class="diagram-card">
+    <h2>2. Skill-First 混合检索管线 <span class="badge">Retrieval Pipeline</span></h2>
+    <div class="mermaid">
+flowchart LR
+    U["🧑 用户提问"] --> A["Agent 识别知识库请求"]
+
+    A --> K["KnowledgeOrchestrator<br/>编排检索流程"]
+
+    K --> S["SkillRetrieverAgent<br/>读 SKILL.md + 知识文件检索"]
+
+    S --> D{"Skill 证据是否足够？<br/>status 检查"}
+
+    D -- "✅ success" --> E1["直接使用 Skill 证据"]
+    D -- "⚠️ partial / not_found / uncertain" --> E2{"检索范围是否<br/>包含 md / json?"}
+
+    E2 -- "是" --> H["启动混合检索 fallback"]
+    E2 -- "否 (仅 excel/pdf)" --> E1
+
+    H --> V["🔷 向量检索<br/>LlamaIndex<br/>text-embedding-v4"]
+    H --> B["🔶 BM25 检索<br/>自定义实现"]
+
+    V --> F["RRF 融合排序"]
+    B --> F
+
+    E1 --> AG["AnswerAgent<br/>基于证据回答"]
+    F --> AG
+
+    AG --> O["💬 返回答案 + 引用证据<br/>(SSE 流式到前端)"]
+
+    style U fill:#1e3a5f,stroke:#38bdf8,color:#e0f2fe
+    style A fill:#14532d,stroke:#22c55e,color:#dcfce7
+    style K fill:#7c2d12,stroke:#f97316,color:#fff7ed
+    style S fill:#7c2d12,stroke:#f97316,color:#fff7ed
+    style D fill:#4c1d95,stroke:#a855f7,color:#f3e8ff
+    style E1 fill:#14532d,stroke:#22c55e,color:#dcfce7
+    style E2 fill:#4c1d95,stroke:#a855f7,color:#f3e8ff
+    style H fill:#7c2d12,stroke:#f97316,color:#fff7ed
+    style V fill:#0c4a6e,stroke:#38bdf8,color:#e0f2fe
+    style B fill:#7c2d12,stroke:#f97316,color:#fff7ed
+    style F fill:#831843,stroke:#ec4899,color:#fce7f3
+    style AG fill:#14532d,stroke:#22c55e,color:#dcfce7
+    style O fill:#0c4a6e,stroke:#38bdf8,color:#e0f2fe
+    </div>
+  </div>
+
+  <!-- 3. 知识检索编排细节 -->
+  <div class="diagram-card">
+    <h2>3. KnowledgeOrchestrator 编排逻辑 <span class="badge">Orchestration Detail</span></h2>
+    <div class="mermaid">
+flowchart TB
+    Q["query"] --> SKILL
+
+    subgraph SKILL["SkillRetrieverAgent.retrieve(query)"]
+        direction TB
+        SKILL1["读取 skills/rag-skill/SKILL.md"]
+        SKILL2["遍历 knowledge/ 目录<br/>逐文件渐进式检索"]
+        SKILL3["调用 read_file / terminal / python_repl"]
+        SKILL4["返回 SkillRetrievalResult"]
+    end
+
+    SKILL --> C{skill_result.status}
+
+    C -- "success" --> FINAL1["final_evidences = skill_result.evidences<br/>retrieval_notice = None"]
+
+    C -- "partial / not_found / uncertain" --> T{"narrowed_types 包含<br/>md 或 json?"}
+
+    T -- "是" --> HYBRID["HybridRetriever.retrieve(query,<br/>path_filters, query_hints)"]
+
+    HYBRID --> VEC["🔷 向量检索"]
+    HYBRID --> BM["🔶 BM25 检索"]
+
+    VEC --> FUSE["fuse()<br/>去重 + RRF 融合"]
+    BM --> FUSE
+
+    FUSE --> FINAL2["final_evidences = fuse(skill, hybrid)<br/>retrieval_notice = 'Skill 检索未找到充分证据，正在启用向量检索...'"]
+
+    T -- "否 (仅 excel/pdf)" --> FINAL3["final_evidences = skill_result.evidences<br/>retrieval_notice = None"]
+
+    FINAL1 --> ANS["AnswerAgent.answer(query, evidences)"]
+    FINAL2 --> ANS
+    FINAL3 --> ANS
+
+    ANS --> RESP["最终回答 + SSE 事件流"]
+
+    style Q fill:#1e3a5f,stroke:#38bdf8,color:#e0f2fe
+    style FINAL1 fill:#14532d,stroke:#22c55e,color:#dcfce7
+    style FINAL2 fill:#7c2d12,stroke:#f97316,color:#fff7ed
+    style FINAL3 fill:#334155,stroke:#64748b,color:#f1f5f9
+    style C fill:#4c1d95,stroke:#a855f7,color:#f3e8ff
+    style T fill:#4c1d95,stroke:#a855f7,color:#f3e8ff
+    style VEC fill:#0c4a6e,stroke:#38bdf8,color:#e0f2fe
+    style BM fill:#7c2d12,stroke:#f97316,color:#fff7ed
+    style FUSE fill:#831843,stroke:#ec4899,color:#fce7f3
+    style ANS fill:#14532d,stroke:#22c55e,color:#dcfce7
+    style RESP fill:#0c4a6e,stroke:#38bdf8,color:#e0f2fe
+    style HYBRID fill:#7c2d12,stroke:#f97316,color:#fff7ed
+    </div>
+  </div>
+
+  <!-- 4. 文档切分策略 -->
+  <div class="diagram-card">
+    <h2>4. 文档索引切分策略 <span class="badge">Indexing Strategy</span></h2>
+    <div class="mermaid">
+flowchart LR
+    subgraph MD["📝 Markdown"]
+        direction TB
+        M1["Parent<br/>标题节点 + 完整子树"]
+        M2["Child<br/>按自然段拆分"]
+        M3["retrieval → hit child<br/>answer → 回填 parent"]
+    end
+
+    subgraph JSON["📄 JSON (FAQ)"]
+        direction TB
+        J1["一个问答对 = 最小语义单元"]
+        J2["question + answer + label + url"]
+    end
+
+    subgraph EXCEL["📊 Excel"]
+        direction TB
+        E1["不切分"]
+        E2["不进 hybrid 索引"]
+        E3["完全由 skill 分支处理"]
+    end
+
+    subgraph PDF["📕 PDF"]
+        direction TB
+        P1["当前不进入 hybrid 索引"]
+        P2["保留在 skill 分支中处理"]
+        P3["切分规则待定义"]
+    end
+
+    INDEX["索引构建"] --> MD
+    INDEX --> JSON
+    INDEX -.->|"不纳入"| EXCEL
+    INDEX -.->|"不纳入"| PDF
+
+    MD --> STORE["storage/knowledge/"]
+    JSON --> STORE
+    STORE --> MANIFEST["manifest.json<br/>源文件元信息 + 指纹"]
+    STORE --> VDIR["vector/<br/>向量索引"]
+    STORE --> BMDIR["bm25/<br/>BM25 索引"]
+
+    style MD fill:#0c4a6e,stroke:#38bdf8,color:#e0f2fe
+    style JSON fill:#0c4a6e,stroke:#38bdf8,color:#e0f2fe
+    style EXCEL fill:#334155,stroke:#64748b,color:#f1f5f9
+    style PDF fill:#334155,stroke:#64748b,color:#f1f5f9
+    style INDEX fill:#7c2d12,stroke:#f97316,color:#fff7ed
+    style STORE fill:#14532d,stroke:#22c55e,color:#dcfce7
+    style MANIFEST fill:#1e293b,stroke:#64748b,color:#f1f5f9
+    style VDIR fill:#4c1d95,stroke:#a855f7,color:#f3e8ff
+    style BMDIR fill:#4c1d95,stroke:#a855f7,color:#f3e8ff
+    </div>
+  </div>
+
+  <!-- 图例 -->
+  <div class="diagram-card">
+    <div class="legend">
+      <div class="legend-item"><div class="legend-color" style="background:#38bdf8"></div> 前端 / 用户交互</div>
+      <div class="legend-item"><div class="legend-color" style="background:#a855f7"></div> 决策 / 状态判断</div>
+      <div class="legend-item"><div class="legend-color" style="background:#22c55e"></div> 后端核心 / 成功路径</div>
+      <div class="legend-item"><div class="legend-color" style="background:#f97316"></div> 检索编排</div>
+      <div class="legend-item"><div class="legend-color" style="background:#ec4899"></div> 融合 / 排序</div>
+      <div class="legend-item"><div class="legend-color" style="background:#64748b"></div> 存储 / 边界</div>
+    </div>
+  </div>
+</div>
+
+<script>
+  mermaid.initialize({
+    theme: 'dark',
+    themeVariables: {
+      fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif',
+      primaryColor: '#1e293b',
+      primaryTextColor: '#e2e8f0',
+      primaryBorderColor: '#334155',
+      lineColor: '#475569',
+      secondaryColor: '#0f172a',
+      tertiaryColor: '#1e293b',
+      fontSize: '14px',
+    },
+    flowchart: {
+      htmlLabels: true,
+      curve: 'basis',
+      padding: 16,
+    },
+  });
+</script>
+</body>
+</html>
