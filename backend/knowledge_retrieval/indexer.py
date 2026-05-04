@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import math
+import os
 import re
 import threading
 import time
@@ -76,11 +77,11 @@ class KnowledgeIndexer:
 
     def _build_embed_model(self) -> OpenAIEmbedding:
         settings = get_settings()
-        return OpenAIEmbedding(
-            api_key=settings.embedding_api_key,
-            api_base=settings.embedding_base_url,
-            model=settings.embedding_model,
-        )
+        os.environ["OPENAI_API_KEY"] = settings.embedding_api_key or ""
+        os.environ["OPENAI_API_BASE"] = settings.embedding_base_url
+        embed = OpenAIEmbedding(embed_batch_size=64)
+        embed._text_engine = settings.embedding_model
+        return embed
 
     def status(self) -> IndexStatus:
         return IndexStatus(
@@ -305,7 +306,8 @@ class KnowledgeIndexer:
             self._vector_index = VectorStoreIndex.from_documents(documents)
             self._vector_index.storage_context.persist(persist_dir=str(self._vector_dir))
             self._vector_ready = True
-        except Exception:
+        except Exception as e:
+            print(f"[KnowledgeIndexer] vector index build failed: {e}")
             self._vector_index = None
             self._vector_ready = False
 

@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import Any
 
 
-DEFAULT_FAQ_PATH = Path(r"E:\download\ragclaw\ragclaw\backend\knowledge\E-commerce Data\faq.json")
+DEFAULT_FAQ_PATH = Path("knowledge") / "E-commerce Data" / "faq.json"
 DEFAULT_PREFIX = "请帮我在知识库查询并回答："
 DEFAULT_OUTPUT_PATH = Path("storage") / "eval_outputs" / "faq_system_accuracy_results.json"
 
