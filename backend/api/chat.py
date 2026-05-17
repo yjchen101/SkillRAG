@@ -26,7 +26,7 @@ def _sse(event: str, data: dict[str, Any]) -> str:
 
 
 def _new_segment() -> dict[str, Any]:
-    return {"content": "", "tool_calls": [], "retrieval_steps": []}
+    return {"content": "", "tool_calls": [], "retrieval_steps": [], "reasoning_content": ""}
 
 
 def _build_full_prompt(
@@ -125,6 +125,7 @@ async def chat(payload: ChatRequest):
                     segment["content"],
                     tool_calls=segment["tool_calls"] or None,
                     retrieval_steps=segment["retrieval_steps"] or None,
+                    reasoning_content=segment["reasoning_content"] or None,
                 )
 
             conversation_saved = True
@@ -136,8 +137,12 @@ async def chat(payload: ChatRequest):
                 if event_type == "token":
                     current_segment["content"] += event.get("content", "")
                 elif event_type == "tool_start":
+                    event_reasoning = str(event.get("reasoning_content", "") or "")
+                    if event_reasoning and not current_segment["reasoning_content"]:
+                        current_segment["reasoning_content"] = event_reasoning
                     current_segment["tool_calls"].append(
                         {
+                            "id": event.get("tool_call_id", ""),
                             "tool": event.get("tool", "tool"),
                             "input": event.get("input", ""),
                             "output": "",
@@ -167,6 +172,8 @@ async def chat(payload: ChatRequest):
                 elif event_type == "done":
                     if not current_segment["content"].strip() and event.get("content"):
                         current_segment["content"] = event["content"]
+                    if event.get("reasoning_content"):
+                        current_segment["reasoning_content"] = str(event["reasoning_content"])
                     persist_segments()
 
                 data = {key: value for key, value in event.items() if key != "type"}

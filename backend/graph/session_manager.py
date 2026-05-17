@@ -91,9 +91,9 @@ class SessionManager:
     def load_session(self, session_id: str) -> list[dict[str, Any]]:
         return self._read_session_file(session_id)["messages"]
 
-    def load_session_for_agent(self, session_id: str) -> list[dict[str, str]]:
+    def load_session_for_agent(self, session_id: str) -> list[dict[str, Any]]:
         record = self._read_session_file(session_id)
-        merged: list[dict[str, str]] = []
+        merged: list[dict[str, Any]] = []
 
         compressed_context = record.get("compressed_context", "").strip()
         if compressed_context:
@@ -107,15 +107,13 @@ class SessionManager:
         for message in record.get("messages", []):
             role = message.get("role", "")
             content = str(message.get("content", "") or "")
-            if role == "assistant" and merged and merged[-1]["role"] == "assistant":
-                if content:
-                    if merged[-1]["content"]:
-                        merged[-1]["content"] += "\n\n" + content
-                    else:
-                        merged[-1]["content"] = content
-                continue
-
-            merged.append({"role": role, "content": content})
+            reasoning_content = str(message.get("reasoning_content", "") or "").strip()
+            payload: dict[str, Any] = {"role": role, "content": content}
+            if role == "assistant" and reasoning_content:
+                payload["reasoning_content"] = reasoning_content
+            if role == "assistant" and isinstance(message.get("tool_calls"), list):
+                payload["tool_calls"] = message.get("tool_calls", [])
+            merged.append(payload)
 
         return [item for item in merged if item["role"] in {"user", "assistant"}]
 
@@ -126,6 +124,7 @@ class SessionManager:
         content: str,
         tool_calls: list[dict[str, Any]] | None = None,
         retrieval_steps: list[dict[str, Any]] | None = None,
+        reasoning_content: str | None = None,
     ) -> dict[str, Any]:
         record = self._read_session_file(session_id)
         message: dict[str, Any] = {"role": role, "content": content}
@@ -133,6 +132,8 @@ class SessionManager:
             message["tool_calls"] = tool_calls
         if retrieval_steps:
             message["retrieval_steps"] = retrieval_steps
+        if role == "assistant" and reasoning_content and reasoning_content.strip():
+            message["reasoning_content"] = reasoning_content.strip()
         record["messages"].append(message)
         self._write_session(record)
         return message

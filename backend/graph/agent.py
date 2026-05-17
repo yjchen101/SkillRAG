@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 import json
+import logging
 import re
 from pathlib import Path
 from typing import Any
 
 from langchain.agents import create_agent
+from langchain_core.messages.utils import convert_to_messages
 from langchain_openai import ChatOpenAI
 
 try:
@@ -28,6 +30,8 @@ KNOWLEDGE_SKILL_PATTERNS = (
     re.compile(r"\.(pdf|xlsx|xls|json)\b", re.IGNORECASE),
 )
 
+logger = logging.getLogger(__name__)
+
 
 def _stringify_content(content: Any) -> str:
     if isinstance(content, str):
@@ -39,6 +43,26 @@ def _stringify_content(content: Any) -> str:
                 parts.append(str(block.get("text", "")))
         return "".join(parts)
     return str(content or "")
+
+
+def _extract_reasoning_content(message: Any) -> str:
+    direct = getattr(message, "reasoning_content", None)
+    if isinstance(direct, str) and direct.strip():
+        return direct.strip()
+
+    additional_kwargs = getattr(message, "additional_kwargs", None)
+    if isinstance(additional_kwargs, dict):
+        raw = additional_kwargs.get("reasoning_content")
+        if isinstance(raw, str) and raw.strip():
+            return raw.strip()
+
+    response_metadata = getattr(message, "response_metadata", None)
+    if isinstance(response_metadata, dict):
+        raw = response_metadata.get("reasoning_content")
+        if isinstance(raw, str) and raw.strip():
+            return raw.strip()
+
+    return ""
 
 
 class AgentManager:
@@ -61,7 +85,7 @@ class AgentManager:
                 raise RuntimeError("langchain-deepseek is not installed")
             if not settings.llm_api_key:
                 raise RuntimeError("Missing API key for provider deepseek")
-            return ChatDeepSeek(
+            return PatchedChatDeepSeek(
                 model=settings.llm_model,
                 api_key=settings.llm_api_key,
                 base_url=settings.llm_base_url,
@@ -98,13 +122,57 @@ class AgentManager:
     def _is_knowledge_query(self, message: str) -> bool:
         return any(pattern.search(message) for pattern in KNOWLEDGE_SKILL_PATTERNS)
 
-    def _build_messages(self, history: list[dict[str, Any]]) -> list[dict[str, str]]:
-        messages: list[dict[str, str]] = []
+    def _build_messages(
+        self,
+        history: list[dict[str, Any]],
+        include_tool_messages: bool = True,
+        include_reasoning_content: bool = False,
+    ) -> list[dict[str, Any]]:
+        messages: list[dict[str, Any]] = []
         for item in history:
             role = item.get("role")
             if role not in {"user", "assistant"}:
                 continue
-            messages.append({"role": role, "content": str(item.get("content", ""))})
+            message: dict[str, Any] = {"role": role, "content": str(item.get("content", ""))}
+            normalized_call_ids: list[str] = []
+            reasoning_content = str(item.get("reasoning_content", "") or "").strip()
+            if role == "assistant" and include_reasoning_content and reasoning_content:
+                message["reasoning_content"] = reasoning_content
+            tool_calls = item.get("tool_calls")
+            if role == "assistant" and isinstance(tool_calls, list) and tool_calls:
+                normalized_tool_calls: list[dict[str, Any]] = []
+                assistant_index = len(messages)
+                for idx, tool_call in enumerate(tool_calls):
+                    call_id = str(tool_call.get("id") or f"call_{assistant_index}_{idx}")
+                    tool_name = str(tool_call.get("tool", "tool"))
+                    tool_input = tool_call.get("input", "")
+                    if not isinstance(tool_input, str):
+                        tool_input = json.dumps(tool_input, ensure_ascii=False)
+                    normalized_tool_calls.append(
+                        {
+                            "id": call_id,
+                            "type": "function",
+                            "function": {"name": tool_name, "arguments": str(tool_input)},
+                        }
+                    )
+                    normalized_call_ids.append(call_id)
+                message["tool_calls"] = normalized_tool_calls
+            messages.append(message)
+            if include_tool_messages and role == "assistant" and isinstance(tool_calls, list):
+                for idx, tool_call in enumerate(tool_calls):
+                    call_id = (
+                        normalized_call_ids[idx]
+                        if idx < len(normalized_call_ids)
+                        else str(tool_call.get("id") or f"call_{len(messages) - 1}_{idx}")
+                    )
+                    tool_output = str(tool_call.get("output", "") or "")
+                    messages.append(
+                        {
+                            "role": "tool",
+                            "tool_call_id": call_id,
+                            "content": tool_output,
+                        }
+                    )
         return messages
 
     def _format_retrieval_context(self, results: list[dict[str, Any]]) -> str:
@@ -182,13 +250,21 @@ class AgentManager:
         model_messages.extend(messages)
 
         final_content_parts: list[str] = []
+        final_reasoning_parts: list[str] = []
         async for chunk in self._build_chat_model().astream(model_messages):
             text = _stringify_content(getattr(chunk, "content", ""))
             if text:
                 final_content_parts.append(text)
                 yield {"type": "token", "content": text}
+            reasoning_text = _extract_reasoning_content(chunk)
+            if reasoning_text:
+                final_reasoning_parts.append(reasoning_text)
 
-        yield {"type": "done", "content": "".join(final_content_parts).strip()}
+        done_event: dict[str, Any] = {"type": "done", "content": "".join(final_content_parts).strip()}
+        reasoning_content = "\n\n".join(part for part in final_reasoning_parts if part).strip()
+        if reasoning_content:
+            done_event["reasoning_content"] = reasoning_content
+        yield done_event
 
     async def astream(
         self,
@@ -230,7 +306,11 @@ class AgentManager:
                     }
                 )
 
-            messages = self._build_messages(augmented_history)
+            messages = self._build_messages(
+                augmented_history,
+                include_tool_messages=False,
+                include_reasoning_content=get_settings().llm_provider == "deepseek",
+            )
             messages.append({"role": "user", "content": message})
 
             async for event in self._astream_model_answer(
@@ -241,11 +321,17 @@ class AgentManager:
             return
 
         agent = self._build_agent()
-        messages = self._build_messages(augmented_history)
+        messages = self._build_messages(
+            augmented_history,
+            include_tool_messages=True,
+            include_reasoning_content=get_settings().llm_provider == "deepseek",
+        )
         messages.append({"role": "user", "content": message})
 
         final_content_parts: list[str] = []
         last_ai_message = ""
+        last_ai_reasoning = ""
+        reasoning_parts: list[str] = []
         pending_tools: dict[str, dict[str, str]] = {}
 
         async for mode, payload in agent.astream(
@@ -254,12 +340,22 @@ class AgentManager:
         ):
             if mode == "messages":
                 chunk, metadata = payload
+                chunk_text_preview = _stringify_content(getattr(chunk, "content", ""))[:200]
+                logger.debug(
+                    "[agent.stream.messages] node=%s chunk_type=%s content_preview=%r",
+                    metadata.get("langgraph_node"),
+                    type(chunk).__name__,
+                    chunk_text_preview,
+                )
                 if metadata.get("langgraph_node") != "model":
                     continue
                 text = _stringify_content(getattr(chunk, "content", ""))
                 if text:
                     final_content_parts.append(text)
                     yield {"type": "token", "content": text}
+                chunk_reasoning = _extract_reasoning_content(chunk)
+                if chunk_reasoning:
+                    reasoning_parts.append(chunk_reasoning)
                 continue
 
             if mode != "updates":
@@ -269,11 +365,29 @@ class AgentManager:
                 for agent_message in update.get("messages", []):
                     message_type = getattr(agent_message, "type", "")
                     tool_calls = getattr(agent_message, "tool_calls", []) or []
+                    content_preview = _stringify_content(getattr(agent_message, "content", ""))[:200]
+                    logger.debug(
+                        "[agent.stream.updates] message_type=%s has_tool_calls=%s tool_calls_count=%s tool_call_id=%s name=%s content_preview=%r",
+                        message_type,
+                        bool(tool_calls),
+                        len(tool_calls),
+                        getattr(agent_message, "tool_call_id", ""),
+                        getattr(agent_message, "name", ""),
+                        content_preview,
+                    )
 
                     if message_type == "ai" and not tool_calls:
                         candidate = _stringify_content(getattr(agent_message, "content", ""))
                         if candidate:
                             last_ai_message = candidate
+                        candidate_reasoning = _extract_reasoning_content(agent_message)
+                        if candidate_reasoning:
+                            last_ai_reasoning = candidate_reasoning
+                    elif message_type == "ai" and tool_calls:
+                        candidate_reasoning = _extract_reasoning_content(agent_message)
+                        if candidate_reasoning:
+                            last_ai_reasoning = candidate_reasoning
+                            reasoning_parts.append(candidate_reasoning)
 
                     if tool_calls:
                         for tool_call in tool_calls:
@@ -283,13 +397,16 @@ class AgentManager:
                             if not isinstance(tool_args, str):
                                 tool_args = json.dumps(tool_args, ensure_ascii=False)
                             pending_tools[call_id] = {
+                                "id": call_id,
                                 "tool": tool_name,
                                 "input": str(tool_args),
                             }
                             yield {
                                 "type": "tool_start",
+                                "tool_call_id": call_id,
                                 "tool": tool_name,
                                 "input": str(tool_args),
+                                "reasoning_content": last_ai_reasoning,
                             }
 
                     if message_type == "tool":
@@ -301,13 +418,18 @@ class AgentManager:
                         output = _stringify_content(getattr(agent_message, "content", ""))
                         yield {
                             "type": "tool_end",
+                            "tool_call_id": tool_call_id,
                             "tool": pending["tool"],
                             "output": output,
                         }
                         yield {"type": "new_response"}
 
         final_content = "".join(final_content_parts).strip() or last_ai_message.strip()
-        yield {"type": "done", "content": final_content}
+        final_reasoning = "\n\n".join(part for part in reasoning_parts if part).strip() or last_ai_reasoning.strip()
+        done_event: dict[str, Any] = {"type": "done", "content": final_content}
+        if final_reasoning:
+            done_event["reasoning_content"] = final_reasoning
+        yield done_event
 
     async def generate_title(self, first_user_message: str) -> str:
         prompt = (
@@ -353,3 +475,33 @@ class AgentManager:
 
 
 agent_manager = AgentManager()
+
+
+class PatchedChatDeepSeek(ChatDeepSeek):
+    """Ensure DeepSeek thinking-mode reasoning_content is forwarded on assistant turns."""
+
+    def _get_request_payload(self, input_, *, stop=None, **kwargs):  # type: ignore[override]
+        payload = super()._get_request_payload(input_, stop=stop, **kwargs)
+        try:
+            lc_messages = convert_to_messages(input_)
+        except Exception:
+            return payload
+
+        for payload_message, lc_message in zip(payload.get("messages", []), lc_messages):
+            if payload_message.get("role") != "assistant":
+                continue
+            reasoning = ""
+            additional_kwargs = getattr(lc_message, "additional_kwargs", None)
+            if isinstance(additional_kwargs, dict):
+                raw = additional_kwargs.get("reasoning_content")
+                if isinstance(raw, str):
+                    reasoning = raw
+            if not reasoning:
+                response_metadata = getattr(lc_message, "response_metadata", None)
+                if isinstance(response_metadata, dict):
+                    raw = response_metadata.get("reasoning_content")
+                    if isinstance(raw, str):
+                        reasoning = raw
+            if reasoning.strip():
+                payload_message["reasoning_content"] = reasoning.strip()
+        return payload
