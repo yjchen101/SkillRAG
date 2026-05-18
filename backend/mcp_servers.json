@@ -1,0 +1,11 @@
+{
+  "servers": [
+    {
+      "name": "demo_stdio",
+      "transport": "stdio",
+      "enabled": true,
+      "command": "uv",
+      "args": ["run", "python", "mcp_integration/demo_server.py"]
+    }
+  ]
+}

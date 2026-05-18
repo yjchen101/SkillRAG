@@ -72,6 +72,30 @@ class Settings:
     embedding_base_url: str
     component_char_limit: int = 20_000
     terminal_timeout_seconds: int = 30
+    mcp_enabled: bool = True
+    mcp_config_path: Path | None = None
+    mcp_tool_timeout_seconds: int = 20
+    mcp_retry_times: int = 1
+
+
+def _parse_bool(value: str | None, default: bool) -> bool:
+    if value is None:
+        return default
+    normalized = value.strip().lower()
+    if normalized in {"1", "true", "yes", "on"}:
+        return True
+    if normalized in {"0", "false", "no", "off"}:
+        return False
+    return default
+
+
+def _parse_int(value: str | None, default: int) -> int:
+    if value is None:
+        return default
+    try:
+        return int(value.strip())
+    except (TypeError, ValueError):
+        return default
 
 
 def _load_env_file() -> Path:
@@ -222,6 +246,14 @@ def get_settings() -> Settings:
         defaults=EMBEDDING_PROVIDER_DEFAULTS,
     )
 
+    mcp_enabled = _parse_bool(_first_config_value("MCP_ENABLED"), True)
+    raw_mcp_config_path = _first_config_value("MCP_CONFIG_PATH")
+    mcp_config_path = (
+        (backend_dir / raw_mcp_config_path).resolve()
+        if raw_mcp_config_path
+        else (backend_dir / "mcp_servers.json").resolve()
+    )
+
     return Settings(
         backend_dir=backend_dir,
         project_root=project_root,
@@ -233,6 +265,10 @@ def get_settings() -> Settings:
         embedding_model=_resolve_embedding_model(embedding_provider),
         embedding_api_key=_resolve_embedding_api_key(embedding_provider),
         embedding_base_url=_resolve_embedding_base_url(embedding_provider),
+        mcp_enabled=mcp_enabled,
+        mcp_config_path=mcp_config_path,
+        mcp_tool_timeout_seconds=_parse_int(_first_config_value("MCP_TOOL_TIMEOUT_SECONDS"), 20),
+        mcp_retry_times=_parse_int(_first_config_value("MCP_RETRY_TIMES"), 1),
     )
 
 

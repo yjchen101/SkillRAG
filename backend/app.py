@@ -16,6 +16,7 @@ from config import get_settings
 from graph.agent import agent_manager
 from graph.memory_indexer import memory_indexer
 from knowledge_retrieval import knowledge_indexer
+from mcp_integration import mcp_manager
 from tools.skills_scanner import refresh_snapshot
 
 
@@ -23,12 +24,18 @@ from tools.skills_scanner import refresh_snapshot
 async def lifespan(_: FastAPI):
     settings = get_settings()
     refresh_snapshot(settings.backend_dir)
-    agent_manager.initialize(settings.backend_dir)
+    await mcp_manager.startup()
+    agent_manager.initialize(
+        settings.backend_dir,
+        mcp_tools=mcp_manager.get_tools(),
+        mcp_tool_metadata=mcp_manager.get_tool_metadata(),
+    )
     memory_indexer.configure(settings.backend_dir)
     memory_indexer.rebuild_index()
     knowledge_indexer.configure(settings.backend_dir)
     knowledge_indexer.rebuild_index()
     yield
+    await mcp_manager.shutdown()
 
 
 app = FastAPI(

@@ -70,11 +70,19 @@ class AgentManager:
         self.base_dir: Path | None = None
         self.session_manager: SessionManager | None = None
         self.tools = []
+        self.tool_metadata: dict[str, dict[str, Any]] = {}
 
-    def initialize(self, base_dir: Path) -> None:
+    def initialize(
+        self,
+        base_dir: Path,
+        *,
+        mcp_tools: list[Any] | None = None,
+        mcp_tool_metadata: dict[str, dict[str, Any]] | None = None,
+    ) -> None:
         self.base_dir = base_dir
         self.session_manager = SessionManager(base_dir)
-        self.tools = get_all_tools(base_dir)
+        self.tools = get_all_tools(base_dir, mcp_tools=mcp_tools)
+        self.tool_metadata = dict(mcp_tool_metadata or {})
         knowledge_orchestrator.configure(base_dir, self._build_chat_model)
 
     def _build_chat_model(self):
@@ -238,6 +246,7 @@ class AgentManager:
         self,
         messages: list[dict[str, str]],
         extra_instructions: list[str] | None = None,
+        include_reasoning_content: bool = False,
     ):
         if self.base_dir is None:
             raise RuntimeError("AgentManager is not initialized")
@@ -257,12 +266,12 @@ class AgentManager:
                 final_content_parts.append(text)
                 yield {"type": "token", "content": text}
             reasoning_text = _extract_reasoning_content(chunk)
-            if reasoning_text:
+            if include_reasoning_content and reasoning_text:
                 final_reasoning_parts.append(reasoning_text)
 
         done_event: dict[str, Any] = {"type": "done", "content": "".join(final_content_parts).strip()}
         reasoning_content = "\n\n".join(part for part in final_reasoning_parts if part).strip()
-        if reasoning_content:
+        if include_reasoning_content and reasoning_content:
             done_event["reasoning_content"] = reasoning_content
         yield done_event
 
@@ -273,6 +282,7 @@ class AgentManager:
     ):
         if self.base_dir is None:
             raise RuntimeError("AgentManager is not initialized")
+        include_reasoning_content = get_settings().llm_provider == "deepseek"
 
         rag_mode = runtime_config.get_rag_mode()
         augmented_history = list(history)
@@ -309,13 +319,14 @@ class AgentManager:
             messages = self._build_messages(
                 augmented_history,
                 include_tool_messages=False,
-                include_reasoning_content=get_settings().llm_provider == "deepseek",
+                include_reasoning_content=include_reasoning_content,
             )
             messages.append({"role": "user", "content": message})
 
             async for event in self._astream_model_answer(
                 messages,
                 extra_instructions=self._knowledge_answer_instructions(knowledge_result) if knowledge_result else None,
+                include_reasoning_content=include_reasoning_content,
             ):
                 yield event
             return
@@ -324,7 +335,7 @@ class AgentManager:
         messages = self._build_messages(
             augmented_history,
             include_tool_messages=True,
-            include_reasoning_content=get_settings().llm_provider == "deepseek",
+            include_reasoning_content=include_reasoning_content,
         )
         messages.append({"role": "user", "content": message})
 
@@ -354,7 +365,7 @@ class AgentManager:
                     final_content_parts.append(text)
                     yield {"type": "token", "content": text}
                 chunk_reasoning = _extract_reasoning_content(chunk)
-                if chunk_reasoning:
+                if include_reasoning_content and chunk_reasoning:
                     reasoning_parts.append(chunk_reasoning)
                 continue
 
@@ -381,11 +392,11 @@ class AgentManager:
                         if candidate:
                             last_ai_message = candidate
                         candidate_reasoning = _extract_reasoning_content(agent_message)
-                        if candidate_reasoning:
+                        if include_reasoning_content and candidate_reasoning:
                             last_ai_reasoning = candidate_reasoning
                     elif message_type == "ai" and tool_calls:
                         candidate_reasoning = _extract_reasoning_content(agent_message)
-                        if candidate_reasoning:
+                        if include_reasoning_content and candidate_reasoning:
                             last_ai_reasoning = candidate_reasoning
                             reasoning_parts.append(candidate_reasoning)
 
@@ -401,13 +412,22 @@ class AgentManager:
                                 "tool": tool_name,
                                 "input": str(tool_args),
                             }
-                            yield {
+                            event_payload: dict[str, Any] = {
                                 "type": "tool_start",
                                 "tool_call_id": call_id,
                                 "tool": tool_name,
                                 "input": str(tool_args),
-                                "reasoning_content": last_ai_reasoning,
                             }
+                            tool_meta = self.tool_metadata.get(tool_name, {})
+                            if tool_meta.get("provider") == "mcp":
+                                event_payload["mcp"] = {
+                                    "server": tool_meta.get("server", ""),
+                                    "tool": tool_meta.get("source_tool", ""),
+                                    "retry_times": tool_meta.get("retry_times", 0),
+                                }
+                            if include_reasoning_content and last_ai_reasoning:
+                                event_payload["reasoning_content"] = last_ai_reasoning
+                            yield event_payload
 
                     if message_type == "tool":
                         tool_call_id = str(getattr(agent_message, "tool_call_id", ""))
@@ -416,18 +436,33 @@ class AgentManager:
                             {"tool": getattr(agent_message, "name", "tool"), "input": ""},
                         )
                         output = _stringify_content(getattr(agent_message, "content", ""))
-                        yield {
+                        event_payload = {
                             "type": "tool_end",
                             "tool_call_id": tool_call_id,
                             "tool": pending["tool"],
                             "output": output,
                         }
+                        tool_meta = self.tool_metadata.get(str(pending.get("tool", "")), {})
+                        if tool_meta.get("provider") == "mcp":
+                            degraded = output.startswith("MCP tool degraded:")
+                            event_payload["mcp"] = {
+                                "server": tool_meta.get("server", ""),
+                                "tool": tool_meta.get("source_tool", ""),
+                                "retry_times": tool_meta.get("retry_times", 0),
+                                "degraded": degraded,
+                                "degrade_reason": (
+                                    "call failed after retries"
+                                    if degraded
+                                    else ""
+                                ),
+                            }
+                        yield event_payload
                         yield {"type": "new_response"}
 
         final_content = "".join(final_content_parts).strip() or last_ai_message.strip()
         final_reasoning = "\n\n".join(part for part in reasoning_parts if part).strip() or last_ai_reasoning.strip()
         done_event: dict[str, Any] = {"type": "done", "content": final_content}
-        if final_reasoning:
+        if include_reasoning_content and final_reasoning:
             done_event["reasoning_content"] = final_reasoning
         yield done_event
 
