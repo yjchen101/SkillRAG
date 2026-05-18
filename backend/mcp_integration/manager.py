@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import json
 import logging
+import os
+import re
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -10,6 +12,7 @@ from config import get_settings
 from mcp_integration.tool_provider import MCPToolProvider
 
 logger = logging.getLogger(__name__)
+ENV_VAR_PATTERN = re.compile(r"\$\{([A-Za-z_][A-Za-z0-9_]*)\}")
 
 
 @dataclass
@@ -19,6 +22,7 @@ class MCPServerConfig:
     enabled: bool
     command: str | None = None
     args: list[str] | None = None
+    env: dict[str, str] | None = None
     url: str | None = None
     headers: dict[str, str] | None = None
 
@@ -32,6 +36,8 @@ class MCPManager:
 
     async def startup(self) -> None:
         settings = get_settings()
+        if self._raw_clients:
+            await self.shutdown()
         self._tools = []
         self._metadata = {}
         self._raw_clients = []
@@ -83,7 +89,7 @@ class MCPManager:
         if config_path is None or not config_path.exists():
             return []
 
-        payload = json.loads(config_path.read_text(encoding="utf-8"))
+        payload = self._expand_env_placeholders(json.loads(config_path.read_text(encoding="utf-8")))
         servers = payload.get("servers", [])
         if not isinstance(servers, list):
             raise ValueError("mcp_servers.json: servers must be a list")
@@ -106,11 +112,29 @@ class MCPManager:
                     enabled=enabled,
                     command=raw.get("command"),
                     args=raw.get("args"),
+                    env=raw.get("env"),
                     url=raw.get("url"),
                     headers=raw.get("headers"),
                 )
             )
         return parsed
+
+    def _expand_env_placeholders(self, value: Any) -> Any:
+        if isinstance(value, dict):
+            return {key: self._expand_env_placeholders(item) for key, item in value.items()}
+        if isinstance(value, list):
+            return [self._expand_env_placeholders(item) for item in value]
+        if not isinstance(value, str):
+            return value
+
+        def replace(match: re.Match[str]) -> str:
+            env_name = match.group(1)
+            env_value = os.environ.get(env_name)
+            if env_value is None:
+                raise ValueError(f"mcp config references missing environment variable: {env_name}")
+            return env_value
+
+        return ENV_VAR_PATTERN.sub(replace, value)
 
     async def _load_server_tools(self, server: MCPServerConfig) -> list[Any]:
         try:
@@ -126,6 +150,7 @@ class MCPManager:
                     "transport": "stdio",
                     "command": server.command,
                     "args": server.args or [],
+                    "env": server.env or {},
                 }
             }
         else:

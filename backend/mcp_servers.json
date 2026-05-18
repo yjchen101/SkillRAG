@@ -1,11 +1,14 @@
 {
   "servers": [
     {
-      "name": "demo_stdio",
+      "name": "github",
       "transport": "stdio",
       "enabled": true,
-      "command": "uv",
-      "args": ["run", "python", "mcp_integration/demo_server.py"]
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-github"],
+      "env": {
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "${GITHUB_PERSONAL_ACCESS_TOKEN}"
+      }
     }
   ]
 }
