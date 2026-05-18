@@ -25,11 +25,7 @@ async def lifespan(_: FastAPI):
     settings = get_settings()
     refresh_snapshot(settings.backend_dir)
     await mcp_manager.startup()
-    agent_manager.initialize(
-        settings.backend_dir,
-        mcp_tools=mcp_manager.get_tools(),
-        mcp_tool_metadata=mcp_manager.get_tool_metadata(),
-    )
+    agent_manager.initialize(settings.backend_dir)
     memory_indexer.configure(settings.backend_dir)
     memory_indexer.rebuild_index()
     knowledge_indexer.configure(settings.backend_dir)

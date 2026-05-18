@@ -21,6 +21,7 @@ from graph.prompt_builder import build_system_prompt
 from graph.session_manager import SessionManager
 from knowledge_retrieval import knowledge_orchestrator
 from tools import get_all_tools
+from mcp_integration.manager import mcp_manager
 
 KNOWLEDGE_SKILL_PATTERNS = (
     re.compile(r"知识库"),
@@ -36,12 +37,22 @@ logger = logging.getLogger(__name__)
 def _stringify_content(content: Any) -> str:
     if isinstance(content, str):
         return content
+    if isinstance(content, dict):
+        try:
+            return json.dumps(content, ensure_ascii=False)
+        except Exception:
+            return str(content)
     if isinstance(content, list):
         parts: list[str] = []
         for block in content:
             if isinstance(block, dict) and block.get("type") == "text":
                 parts.append(str(block.get("text", "")))
-        return "".join(parts)
+        if parts:
+            return "".join(parts)
+        try:
+            return json.dumps(content, ensure_ascii=False)
+        except Exception:
+            return str(content)
     return str(content or "")
 
 
@@ -75,15 +86,15 @@ class AgentManager:
     def initialize(
         self,
         base_dir: Path,
-        *,
-        mcp_tools: list[Any] | None = None,
-        mcp_tool_metadata: dict[str, dict[str, Any]] | None = None,
     ) -> None:
         self.base_dir = base_dir
         self.session_manager = SessionManager(base_dir)
-        self.tools = get_all_tools(base_dir, mcp_tools=mcp_tools)
-        self.tool_metadata = dict(mcp_tool_metadata or {})
+        self.tools = get_all_tools(base_dir, mcp_manager=mcp_manager)
+        self.tool_metadata = dict(mcp_manager.get_tool_metadata())
         knowledge_orchestrator.configure(base_dir, self._build_chat_model)
+
+    def get_mcp_tool_summaries(self) -> list[dict[str, str]]:
+        return mcp_manager.get_tool_summaries()
 
     def _build_chat_model(self):
         settings = get_settings()
@@ -119,6 +130,36 @@ class AgentManager:
             raise RuntimeError("AgentManager is not initialized")
 
         system_prompt = build_system_prompt(self.base_dir, runtime_config.get_rag_mode())
+        mcp_tool_summaries = self.get_mcp_tool_summaries()
+        if mcp_tool_summaries:
+            active_tool_names = {
+                str(getattr(tool, "name", ""))
+                for tool in (tools_override if tools_override is not None else self.tools)
+                if getattr(tool, "name", "")
+            }
+            active_mcp_tool_names = sorted(
+                name
+                for name in active_tool_names
+                if name in self.tool_metadata and self.tool_metadata[name].get("provider") == "mcp"
+            )
+            inactive_mcp_summaries = [
+                item for item in mcp_tool_summaries if item["name"] not in active_mcp_tool_names
+            ]
+            if active_mcp_tool_names:
+                system_prompt = (
+                    f"{system_prompt}\n\n"
+                    "[Activated MCP tools]\n"
+                    "These MCP tools are already registered for function calling in this turn and can be called directly.\n"
+                    f"{json.dumps(active_mcp_tool_names, ensure_ascii=False, indent=2)}"
+                )
+            if inactive_mcp_summaries:
+                system_prompt = (
+                    f"{system_prompt}\n\n"
+                    "[Available MCP tool catalog summaries]\n"
+                    "These MCP tools are not registered for function calling yet. "
+                    "To use one, first call tool_search with the exact exposed name.\n"
+                    f"{json.dumps(inactive_mcp_summaries, ensure_ascii=False, indent=2)}"
+                )
         if extra_instructions:
             system_prompt = f"{system_prompt}\n\n" + "\n\n".join(extra_instructions)
         return create_agent(
@@ -331,7 +372,6 @@ class AgentManager:
                 yield event
             return
 
-        agent = self._build_agent()
         messages = self._build_messages(
             augmented_history,
             include_tool_messages=True,
@@ -343,121 +383,185 @@ class AgentManager:
         last_ai_message = ""
         last_ai_reasoning = ""
         reasoning_parts: list[str] = []
-        pending_tools: dict[str, dict[str, str]] = {}
+        base_tools = [tool for tool in self.tools if getattr(tool, "name", "") != "tool_search"]
+        tool_search_tool = mcp_manager.get_tool_search_tool()
+        active_tools = base_tools + [tool_search_tool]
+        activation_state: dict[str, Any] = {}
 
-        async for mode, payload in agent.astream(
-            {"messages": messages},
-            stream_mode=["messages", "updates"],
-        ):
-            if mode == "messages":
-                chunk, metadata = payload
-                chunk_text_preview = _stringify_content(getattr(chunk, "content", ""))[:200]
-                logger.debug(
-                    "[agent.stream.messages] node=%s chunk_type=%s content_preview=%r",
-                    metadata.get("langgraph_node"),
-                    type(chunk).__name__,
-                    chunk_text_preview,
-                )
-                if metadata.get("langgraph_node") != "model":
-                    continue
-                text = _stringify_content(getattr(chunk, "content", ""))
-                if text:
-                    final_content_parts.append(text)
-                    yield {"type": "token", "content": text}
-                chunk_reasoning = _extract_reasoning_content(chunk)
-                if include_reasoning_content and chunk_reasoning:
-                    reasoning_parts.append(chunk_reasoning)
-                continue
-
-            if mode != "updates":
-                continue
-
-            for update in payload.values():
-                for agent_message in update.get("messages", []):
-                    message_type = getattr(agent_message, "type", "")
-                    tool_calls = getattr(agent_message, "tool_calls", []) or []
-                    content_preview = _stringify_content(getattr(agent_message, "content", ""))[:200]
+        async def consume_turn(
+            turn_messages: list[dict[str, Any]],
+            agent_tools: list[Any],
+            allow_activation: bool,
+        ) -> None:
+            pending_tools: dict[str, dict[str, str]] = {}
+            synthetic_tool_call_index = 0
+            turn_last_ai_message = ""
+            turn_last_ai_reasoning = ""
+            async for mode, payload in self._build_agent(
+                tools_override=agent_tools,
+            ).astream(
+                {"messages": turn_messages},
+                stream_mode=["messages", "updates"],
+            ):
+                if mode == "messages":
+                    chunk, metadata = payload
+                    chunk_text_preview = _stringify_content(getattr(chunk, "content", ""))[:200]
                     logger.debug(
-                        "[agent.stream.updates] message_type=%s has_tool_calls=%s tool_calls_count=%s tool_call_id=%s name=%s content_preview=%r",
-                        message_type,
-                        bool(tool_calls),
-                        len(tool_calls),
-                        getattr(agent_message, "tool_call_id", ""),
-                        getattr(agent_message, "name", ""),
-                        content_preview,
+                        "[agent.stream.messages] node=%s chunk_type=%s content_preview=%r",
+                        metadata.get("langgraph_node"),
+                        type(chunk).__name__,
+                        chunk_text_preview,
                     )
+                    if metadata.get("langgraph_node") != "model":
+                        continue
+                    text = _stringify_content(getattr(chunk, "content", ""))
+                    if text:
+                        final_content_parts.append(text)
+                        yield {"type": "token", "content": text}
+                    chunk_reasoning = _extract_reasoning_content(chunk)
+                    if include_reasoning_content and chunk_reasoning:
+                        reasoning_parts.append(chunk_reasoning)
+                    continue
 
-                    if message_type == "ai" and not tool_calls:
-                        candidate = _stringify_content(getattr(agent_message, "content", ""))
-                        if candidate:
-                            last_ai_message = candidate
-                        candidate_reasoning = _extract_reasoning_content(agent_message)
-                        if include_reasoning_content and candidate_reasoning:
-                            last_ai_reasoning = candidate_reasoning
-                    elif message_type == "ai" and tool_calls:
-                        candidate_reasoning = _extract_reasoning_content(agent_message)
-                        if include_reasoning_content and candidate_reasoning:
-                            last_ai_reasoning = candidate_reasoning
-                            reasoning_parts.append(candidate_reasoning)
+                if mode != "updates":
+                    continue
 
-                    if tool_calls:
-                        for tool_call in tool_calls:
-                            call_id = str(tool_call.get("id") or tool_call.get("name"))
-                            tool_name = str(tool_call.get("name", "tool"))
-                            tool_args = tool_call.get("args", "")
-                            if not isinstance(tool_args, str):
-                                tool_args = json.dumps(tool_args, ensure_ascii=False)
-                            pending_tools[call_id] = {
-                                "id": call_id,
-                                "tool": tool_name,
-                                "input": str(tool_args),
+                for update in payload.values():
+                    for agent_message in update.get("messages", []):
+                        message_type = getattr(agent_message, "type", "")
+                        tool_calls = getattr(agent_message, "tool_calls", []) or []
+                        content_preview = _stringify_content(getattr(agent_message, "content", ""))[:200]
+                        logger.debug(
+                            "[agent.stream.updates] message_type=%s has_tool_calls=%s tool_calls_count=%s tool_call_id=%s name=%s content_preview=%r",
+                            message_type,
+                            bool(tool_calls),
+                            len(tool_calls),
+                            getattr(agent_message, "tool_call_id", ""),
+                            getattr(agent_message, "name", ""),
+                            content_preview,
+                        )
+
+                        if message_type == "ai" and not tool_calls:
+                            candidate = _stringify_content(getattr(agent_message, "content", ""))
+                            if candidate:
+                                turn_last_ai_message = candidate
+                                last_ai_message = candidate
+                            candidate_reasoning = _extract_reasoning_content(agent_message)
+                            if include_reasoning_content and candidate_reasoning:
+                                turn_last_ai_reasoning = candidate_reasoning
+                                last_ai_reasoning = candidate_reasoning
+                        elif message_type == "ai" and tool_calls:
+                            candidate_reasoning = _extract_reasoning_content(agent_message)
+                            if include_reasoning_content and candidate_reasoning:
+                                turn_last_ai_reasoning = candidate_reasoning
+                                last_ai_reasoning = candidate_reasoning
+                                reasoning_parts.append(candidate_reasoning)
+
+                        if tool_calls:
+                            for tool_call in tool_calls:
+                                raw_call_id = tool_call.get("id")
+                                call_id = str(raw_call_id).strip() if raw_call_id is not None else ""
+                                if not call_id:
+                                    synthetic_tool_call_index += 1
+                                    call_id = f"tool_call_{synthetic_tool_call_index}"
+                                tool_name = str(tool_call.get("name", "tool"))
+                                tool_args = tool_call.get("args", "")
+                                if not isinstance(tool_args, str):
+                                    tool_args = json.dumps(tool_args, ensure_ascii=False)
+                                pending_tools[call_id] = {
+                                    "id": call_id,
+                                    "tool": tool_name,
+                                    "input": str(tool_args),
+                                }
+                                event_payload: dict[str, Any] = {
+                                    "type": "tool_start",
+                                    "tool_call_id": call_id,
+                                    "tool": tool_name,
+                                    "input": str(tool_args),
+                                }
+                                tool_meta = self.tool_metadata.get(tool_name, {})
+                                if tool_meta.get("provider") == "mcp":
+                                    event_payload["mcp"] = {
+                                        "server": tool_meta.get("server", ""),
+                                        "tool": tool_meta.get("source_tool", ""),
+                                        "retry_times": tool_meta.get("retry_times", 0),
+                                    }
+                                if include_reasoning_content and turn_last_ai_reasoning:
+                                    event_payload["reasoning_content"] = turn_last_ai_reasoning
+                                yield event_payload
+
+                        if message_type == "tool":
+                            raw_tool_call_id = getattr(agent_message, "tool_call_id", "")
+                            tool_call_id = str(raw_tool_call_id).strip() if raw_tool_call_id is not None else ""
+                            if not tool_call_id and pending_tools:
+                                tool_call_id = next(iter(pending_tools.keys()))
+                            pending = pending_tools.pop(
+                                tool_call_id,
+                                {"tool": getattr(agent_message, "name", "tool"), "input": ""},
+                            )
+                            output = _stringify_content(getattr(agent_message, "content", ""))
+                            event_payload = {
+                                "type": "tool_end",
+                                "tool_call_id": tool_call_id,
+                                "tool": pending["tool"],
+                                "output": output,
                             }
-                            event_payload: dict[str, Any] = {
-                                "type": "tool_start",
-                                "tool_call_id": call_id,
-                                "tool": tool_name,
-                                "input": str(tool_args),
-                            }
-                            tool_meta = self.tool_metadata.get(tool_name, {})
+                            tool_meta = self.tool_metadata.get(str(pending.get("tool", "")), {})
                             if tool_meta.get("provider") == "mcp":
+                                degraded = output.startswith("MCP tool degraded:")
                                 event_payload["mcp"] = {
                                     "server": tool_meta.get("server", ""),
                                     "tool": tool_meta.get("source_tool", ""),
                                     "retry_times": tool_meta.get("retry_times", 0),
+                                    "degraded": degraded,
+                                    "degrade_reason": "call failed after retries" if degraded else "",
                                 }
-                            if include_reasoning_content and last_ai_reasoning:
-                                event_payload["reasoning_content"] = last_ai_reasoning
                             yield event_payload
+                            yield {"type": "new_response"}
 
-                    if message_type == "tool":
-                        tool_call_id = str(getattr(agent_message, "tool_call_id", ""))
-                        pending = pending_tools.pop(
-                            tool_call_id,
-                            {"tool": getattr(agent_message, "name", "tool"), "input": ""},
-                        )
-                        output = _stringify_content(getattr(agent_message, "content", ""))
-                        event_payload = {
-                            "type": "tool_end",
-                            "tool_call_id": tool_call_id,
-                            "tool": pending["tool"],
-                            "output": output,
+                            if pending["tool"] == "tool_search" and allow_activation:
+                                try:
+                                    search_result = json.loads(output)
+                                except Exception:
+                                    search_result = {}
+                                selected_tool = str(search_result.get("tool_name", "")).strip()
+                                if search_result.get("found") and selected_tool:
+                                    activation_state["selected_tool"] = selected_tool
+                                    activation_state["tool_call_id"] = tool_call_id
+                                    activation_state["tool_input"] = pending["input"]
+                                    activation_state["tool_output"] = output
+                                    activation_state["assistant_content"] = turn_last_ai_message
+                                    return
+
+        async for event in consume_turn(messages, active_tools, True):
+            yield event
+
+        selected_tool = str(activation_state.get("selected_tool", "")).strip()
+        if selected_tool:
+            activated_tool = mcp_manager.get_tool(selected_tool)
+            if activated_tool is None:
+                raise RuntimeError(f"Selected MCP tool not found: {selected_tool}")
+            tool_call_id = str(activation_state.get("tool_call_id", "")).strip()
+            tool_input = str(activation_state.get("tool_input", "") or "")
+            tool_output = str(activation_state.get("tool_output", "") or "")
+            assistant_content = str(activation_state.get("assistant_content", "") or "")
+            messages = messages + [
+                {
+                    "role": "assistant",
+                    "content": assistant_content,
+                    "tool_calls": [
+                        {
+                            "id": tool_call_id,
+                            "type": "function",
+                            "function": {"name": "tool_search", "arguments": tool_input},
                         }
-                        tool_meta = self.tool_metadata.get(str(pending.get("tool", "")), {})
-                        if tool_meta.get("provider") == "mcp":
-                            degraded = output.startswith("MCP tool degraded:")
-                            event_payload["mcp"] = {
-                                "server": tool_meta.get("server", ""),
-                                "tool": tool_meta.get("source_tool", ""),
-                                "retry_times": tool_meta.get("retry_times", 0),
-                                "degraded": degraded,
-                                "degrade_reason": (
-                                    "call failed after retries"
-                                    if degraded
-                                    else ""
-                                ),
-                            }
-                        yield event_payload
-                        yield {"type": "new_response"}
+                    ],
+                },
+                {"role": "tool", "tool_call_id": tool_call_id, "content": tool_output},
+            ]
+            active_tools = base_tools + [activated_tool]
+            async for event in consume_turn(messages, active_tools, False):
+                yield event
 
         final_content = "".join(final_content_parts).strip() or last_ai_message.strip()
         final_reasoning = "\n\n".join(part for part in reasoning_parts if part).strip() or last_ai_reasoning.strip()

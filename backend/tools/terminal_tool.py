@@ -21,6 +21,7 @@ BLOCKED_PATTERNS = (
     "format ",
     ":(){:|:&};:",
 )
+ALLOWLIST_PREFIXES = ("lark-cli",)
 
 
 class TerminalToolInput(BaseModel):
@@ -46,9 +47,13 @@ class TerminalTool(BaseTool):
         command: str,
         run_manager: CallbackManagerForToolRun | None = None,
     ) -> str:
-        lowered = command.lower()
-        if any(pattern in lowered for pattern in BLOCKED_PATTERNS):
-            return "Blocked: command matches the terminal blacklist."
+        stripped = command.strip()
+        if any(stripped.startswith(prefix) for prefix in ALLOWLIST_PREFIXES):
+            pass
+        else:
+            lowered = command.lower()
+            if any(pattern in lowered for pattern in BLOCKED_PATTERNS):
+                return "Blocked: command matches the terminal blacklist."
 
         settings = get_settings()
         shell_command = (

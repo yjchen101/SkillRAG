@@ -8,6 +8,9 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+from langchain_core.tools import BaseTool
+from pydantic import BaseModel, ConfigDict, Field
+
 from config import get_settings
 from mcp_integration.tool_provider import MCPToolProvider
 
@@ -27,29 +30,49 @@ class MCPServerConfig:
     headers: dict[str, str] | None = None
 
 
+class ToolSearchInput(BaseModel):
+    name: str = Field(..., description="Exact exposed MCP tool name")
+
+
+class ToolSearchTool(BaseTool):
+    name: str = "tool_search"
+    description: str = "Resolve an exact MCP tool name and return its full input schema."
+    args_schema: type[BaseModel] = ToolSearchInput
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    def __init__(self, manager: "MCPManager") -> None:
+        super().__init__()
+        self._manager = manager
+
+    def _run(self, name: str, run_manager=None) -> dict[str, Any]:
+        return self._manager.search_tool(name)
+
+    async def _arun(self, name: str, run_manager=None) -> dict[str, Any]:
+        return self._run(name, run_manager)
+
+
 class MCPManager:
     def __init__(self) -> None:
         self._started = False
-        self._tools: list[Any] = []
-        self._metadata: dict[str, dict[str, Any]] = {}
+        self._catalog: dict[str, dict[str, Any]] = {}
         self._raw_clients: list[Any] = []
+        self._tool_provider: MCPToolProvider | None = None
 
     async def startup(self) -> None:
         settings = get_settings()
         if self._raw_clients:
             await self.shutdown()
-        self._tools = []
-        self._metadata = {}
+        self._catalog = {}
         self._raw_clients = []
+        self._tool_provider = MCPToolProvider(
+            timeout_seconds=settings.mcp_tool_timeout_seconds,
+            retry_times=settings.mcp_retry_times,
+        )
 
         if not settings.mcp_enabled:
             return
 
         server_configs = self._load_server_configs(settings.mcp_config_path)
-        provider = MCPToolProvider(
-            timeout_seconds=settings.mcp_tool_timeout_seconds,
-            retry_times=settings.mcp_retry_times,
-        )
 
         for server in server_configs:
             if not server.enabled:
@@ -57,12 +80,17 @@ class MCPManager:
             try:
                 source_tools = await self._load_server_tools(server)
                 for source_tool in source_tools:
-                    adapted_tool = provider.adapt(server.name, source_tool)
-                    self._tools.append(adapted_tool)
-                    self._metadata[adapted_tool.name] = {
+                    source_name = str(getattr(source_tool, "name", "tool"))
+                    exposed_name = self._tool_provider.format_name(server.name, source_name)
+                    raw_schema = self._extract_raw_input_schema(source_tool)
+                    self._catalog[exposed_name] = {
+                        "name": exposed_name,
+                        "description": str(getattr(source_tool, "description", "")),
                         "provider": "mcp",
                         "server": server.name,
-                        "source_tool": str(getattr(source_tool, "name", "tool")),
+                        "source_tool": source_name,
+                        "input_schema": raw_schema,
+                        "source_tool_obj": source_tool,
                         "retry_times": settings.mcp_retry_times,
                         "timeout_seconds": settings.mcp_tool_timeout_seconds,
                     }
@@ -74,16 +102,78 @@ class MCPManager:
     async def shutdown(self) -> None:
         for client in self._raw_clients:
             await self._close_client(client)
-        self._tools = []
-        self._metadata = {}
+        self._catalog = {}
         self._raw_clients = []
+        self._tool_provider = None
         self._started = False
 
     def get_tools(self) -> list[Any]:
-        return list(self._tools)
+        return [self.get_tool_search_tool()]
+
+    def get_tool(self, name: str) -> BaseTool | None:
+        entry = self._catalog.get(name)
+        if entry is None:
+            return None
+        return self.adapt_tool(name)
 
     def get_tool_metadata(self) -> dict[str, dict[str, Any]]:
-        return dict(self._metadata)
+        return {
+            name: {
+                key: value
+                for key, value in entry.items()
+                if key not in {"source_tool_obj"}
+            }
+            for name, entry in self._catalog.items()
+        }
+
+    def get_tool_summaries(self) -> list[dict[str, str]]:
+        return [
+            {"name": entry["name"], "description": entry["description"]}
+            for entry in self._catalog.values()
+        ]
+
+    def get_tool_search_tool(self) -> BaseTool:
+        return ToolSearchTool(self)
+
+    def search_tool(self, name: str) -> dict[str, Any]:
+        entry = self._catalog.get(name)
+        if entry is None:
+            return {
+                "found": False,
+                "error": f"Unknown MCP tool: {name}",
+            }
+        return {
+            "found": True,
+            "tool_name": entry["name"],
+            "description": entry["description"],
+            "input_schema": entry["input_schema"],
+            "server": entry["server"],
+            "source_tool": entry["source_tool"],
+        }
+
+    def adapt_tool(self, name: str) -> BaseTool:
+        entry = self._catalog.get(name)
+        if entry is None:
+            raise KeyError(name)
+        if self._tool_provider is None:
+            settings = get_settings()
+            self._tool_provider = MCPToolProvider(
+                timeout_seconds=settings.mcp_tool_timeout_seconds,
+                retry_times=settings.mcp_retry_times,
+            )
+        return self._tool_provider.adapt(entry["server"], entry["source_tool_obj"])
+
+    def get_tool_metadata_for(self, name: str) -> dict[str, Any]:
+        entry = self._catalog.get(name)
+        if entry is None:
+            return {}
+        return {
+            "provider": "mcp",
+            "server": entry["server"],
+            "source_tool": entry["source_tool"],
+            "retry_times": entry["retry_times"],
+            "timeout_seconds": entry["timeout_seconds"],
+        }
 
     def _load_server_configs(self, config_path: Path | None) -> list[MCPServerConfig]:
         if config_path is None or not config_path.exists():
@@ -118,6 +208,20 @@ class MCPManager:
                 )
             )
         return parsed
+
+    def _extract_raw_input_schema(self, source_tool: Any) -> dict[str, Any]:
+        schema = getattr(source_tool, "args_schema", None)
+        if schema is None:
+            schema = getattr(source_tool, "inputSchema", None)
+        if isinstance(schema, dict):
+            return schema
+        if schema is None:
+            schema = source_tool.get_input_schema()
+        if hasattr(schema, "model_json_schema") and callable(getattr(schema, "model_json_schema")):
+            return schema.model_json_schema()
+        if hasattr(schema, "schema") and callable(getattr(schema, "schema")):
+            return schema.schema()
+        return {}
 
     def _expand_env_placeholders(self, value: Any) -> Any:
         if isinstance(value, dict):

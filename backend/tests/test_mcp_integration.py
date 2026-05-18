@@ -9,8 +9,10 @@ from pathlib import Path
 
 from pydantic import BaseModel
 
+from api.chat import _build_full_prompt
 from mcp_integration.manager import MCPManager
 from mcp_integration.tool_provider import MCPToolProvider
+from tools import get_all_tools
 
 
 class DummySchema(BaseModel):
@@ -48,6 +50,16 @@ class RootWrappedTool(DummyTool):
 
 
 class SearchTool(DummyTool):
+    args_schema = {
+        "type": "object",
+        "properties": {
+            "query": {"type": "string", "description": "Search query"},
+            "perPage": {"type": "number", "description": "Page size"},
+        },
+        "required": ["query"],
+        "additionalProperties": False,
+    }
+
     def get_input_schema(self):
         class SearchSchema(BaseModel):
             query: str
@@ -98,16 +110,14 @@ class StartupTrackingManager(MCPManager):
         self.startup_calls = 0
 
     def _load_server_configs(self, config_path: Path | None):
-        return [
-            type("Server", (), {"name": "demo", "enabled": True})(),
-        ]
+        return [type("Server", (), {"name": "demo", "enabled": True})()]
 
     async def _load_server_tools(self, server):
         self.startup_calls += 1
         client = DummyClosableClient()
         self.created_clients.append(client)
         self._raw_clients.append(client)
-        return []
+        return [DummyTool()]
 
 
 class MCPIntegrationTests(unittest.IsolatedAsyncioTestCase):
@@ -160,9 +170,7 @@ class MCPIntegrationTests(unittest.IsolatedAsyncioTestCase):
                                     "enabled": True,
                                     "command": "npx",
                                     "args": ["-y", "@modelcontextprotocol/server-github"],
-                                    "env": {
-                                        "GITHUB_PERSONAL_ACCESS_TOKEN": "${TEST_MCP_TOKEN}",
-                                    },
+                                    "env": {"GITHUB_PERSONAL_ACCESS_TOKEN": "${TEST_MCP_TOKEN}"},
                                 }
                             ]
                         }
@@ -202,11 +210,7 @@ class MCPIntegrationTests(unittest.IsolatedAsyncioTestCase):
         provider = MCPToolProvider(timeout_seconds=20, retry_times=1)
         wrapped = provider.adapt("github", SearchTool())
         result = await wrapped.ainvoke(
-            {
-                "root": {"id": "search-repos", "name": "search_repositories"},
-                "query": "user:@me",
-                "perPage": 100,
-            }
+            {"root": {"id": "search-repos", "name": "search_repositories"}, "query": "user:@me", "perPage": 100}
         )
         self.assertEqual(result, {"ok": True})
 
@@ -227,11 +231,7 @@ class MCPIntegrationTests(unittest.IsolatedAsyncioTestCase):
         provider = MCPToolProvider(timeout_seconds=20, retry_times=1)
         wrapped = provider.adapt("github", SearchTool())
         result = await wrapped.ainvoke(
-            {
-                "root": {"id": "search-repos", "name": "search_repositories"},
-                "args": {"query": "user:@me", "perPage": 100},
-                "page": 1,
-            }
+            {"root": {"id": "search-repos", "name": "search_repositories"}, "args": {"query": "user:@me", "perPage": 100}, "page": 1}
         )
         self.assertEqual(result, {"ok": True})
 
@@ -266,6 +266,89 @@ class MCPIntegrationTests(unittest.IsolatedAsyncioTestCase):
 
         self.assertTrue(first_client.closed)
         self.assertEqual(manager.startup_calls, 2)
+
+    async def test_startup_builds_catalog_without_eager_tool_registration(self):
+        manager = StartupTrackingManager()
+        await manager.startup()
+
+        self.assertEqual([tool.name for tool in manager.get_tools()], ["tool_search"])
+        self.assertEqual(manager.get_tool_summaries(), [{"name": "mcp_demo_echo", "description": "echo tool"}])
+
+    async def test_tool_search_exact_lookup_returns_schema(self):
+        manager = StartupTrackingManager()
+        await manager.startup()
+        tool_search = get_all_tools(Path("."), mcp_manager=manager)[-1]
+
+        result = await tool_search.ainvoke({"name": "mcp_demo_echo"})
+
+        self.assertTrue(result["found"])
+        self.assertEqual(result["tool_name"], "mcp_demo_echo")
+        self.assertEqual(result["server"], "demo")
+        self.assertEqual(result["source_tool"], "echo")
+        self.assertIn("properties", result["input_schema"])
+        self.assertNotIn("$defs", result["input_schema"])
+        self.assertIn("value", result["input_schema"]["properties"])
+        self.assertNotIn("ToolCall", json.dumps(result["input_schema"]))
+
+    async def test_tool_search_unknown_name_returns_structured_error(self):
+        manager = StartupTrackingManager()
+        await manager.startup()
+        tool_search = get_all_tools(Path("."), mcp_manager=manager)[-1]
+
+        result = await tool_search.ainvoke({"name": "mcp_missing"})
+
+        self.assertFalse(result["found"])
+        self.assertIn("error", result)
+
+    async def test_tool_search_prefers_raw_dict_args_schema(self):
+        manager = MCPManager()
+        manager._tool_provider = MCPToolProvider(timeout_seconds=20, retry_times=1)
+        search_tool = SearchTool()
+        manager._catalog["mcp_github_search_repositories"] = {
+            "name": "mcp_github_search_repositories",
+            "description": "Search for GitHub repositories",
+            "provider": "mcp",
+            "server": "github",
+            "source_tool": "search_repositories",
+            "input_schema": manager._extract_raw_input_schema(search_tool),
+            "source_tool_obj": search_tool,
+            "retry_times": 1,
+            "timeout_seconds": 20,
+        }
+
+        result = manager.search_tool("mcp_github_search_repositories")
+
+        self.assertTrue(result["found"])
+        self.assertEqual(result["input_schema"]["type"], "object")
+        self.assertIn("query", result["input_schema"]["properties"])
+        self.assertNotIn("$defs", result["input_schema"])
+        self.assertNotIn("ToolCall", json.dumps(result["input_schema"]))
+
+    async def test_lazy_adaptation_returns_single_tool(self):
+        manager = StartupTrackingManager()
+        await manager.startup()
+
+        tool = manager.adapt_tool("mcp_demo_echo")
+
+        self.assertEqual(tool.name, "mcp_demo_echo")
+        self.assertEqual(await tool.ainvoke({"value": "ok"}), "ok")
+
+    async def test_prompt_log_includes_mcp_catalog_separately(self):
+        manager = StartupTrackingManager()
+        await manager.startup()
+
+        prompt = _build_full_prompt(
+            base_dir=Path("."),
+            rag_mode=False,
+            history=[],
+            message="test",
+            tools=get_all_tools(Path("."), mcp_manager=manager),
+            mcp_tool_summaries=manager.get_tool_summaries(),
+        )
+
+        self.assertIn("--- mcp catalog ---", prompt)
+        self.assertIn('"name": "mcp_demo_echo"', prompt)
+        self.assertIn('"description": "echo tool"', prompt)
 
 
 if __name__ == "__main__":

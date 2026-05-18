@@ -8,7 +8,7 @@ from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel, Field
 
 from api.chat_logger import ChatPromptLogger
-from config import runtime_config
+from config import get_settings, runtime_config
 from graph.agent import agent_manager
 from graph.prompt_builder import build_system_prompt
 
@@ -35,6 +35,7 @@ def _build_full_prompt(
     history: list[dict[str, Any]],
     message: str,
     tools: list[Any] | None = None,
+    mcp_tool_summaries: list[dict[str, str]] | None = None,
 ) -> str:
     system = build_system_prompt(base_dir, rag_mode)
     lines = [f"system:\n{system}"]
@@ -42,7 +43,11 @@ def _build_full_prompt(
     if tools:
         lines.append("\n--- tools ---")
         for tool in tools:
-            schema = tool.get_input_schema().schema()
+            schema_type = tool.get_input_schema()
+            if hasattr(schema_type, "model_json_schema") and callable(getattr(schema_type, "model_json_schema")):
+                schema = schema_type.model_json_schema()
+            else:
+                schema = schema_type.schema()
             lines.append(
                 json.dumps(
                     {
@@ -54,6 +59,11 @@ def _build_full_prompt(
                     ensure_ascii=False,
                 )
             )
+
+    if mcp_tool_summaries:
+        lines.append("\n--- mcp catalog ---")
+        for item in mcp_tool_summaries:
+            lines.append(json.dumps(item, indent=2, ensure_ascii=False))
 
     if history:
         lines.append("\n--- history ---")
@@ -80,6 +90,7 @@ async def chat(payload: ChatRequest):
     )
 
     prompt_logger = ChatPromptLogger(payload.session_id)
+    include_reasoning_content = get_settings().llm_provider == "deepseek"
 
     if agent_manager.base_dir is not None:
         full_prompt = _build_full_prompt(
@@ -88,6 +99,7 @@ async def chat(payload: ChatRequest):
             history,
             payload.message,
             tools=agent_manager.tools,
+            mcp_tool_summaries=agent_manager.get_mcp_tool_summaries(),
         )
         prompt_logger.log_prompt(full_prompt)
 
@@ -125,7 +137,9 @@ async def chat(payload: ChatRequest):
                     segment["content"],
                     tool_calls=segment["tool_calls"] or None,
                     retrieval_steps=segment["retrieval_steps"] or None,
-                    reasoning_content=segment["reasoning_content"] or None,
+                    reasoning_content=(
+                        segment["reasoning_content"] if include_reasoning_content else None
+                    ),
                 )
 
             conversation_saved = True
@@ -138,7 +152,7 @@ async def chat(payload: ChatRequest):
                     current_segment["content"] += event.get("content", "")
                 elif event_type == "tool_start":
                     event_reasoning = str(event.get("reasoning_content", "") or "")
-                    if event_reasoning and not current_segment["reasoning_content"]:
+                    if include_reasoning_content and event_reasoning and not current_segment["reasoning_content"]:
                         current_segment["reasoning_content"] = event_reasoning
                     current_segment["tool_calls"].append(
                         {
@@ -172,11 +186,13 @@ async def chat(payload: ChatRequest):
                 elif event_type == "done":
                     if not current_segment["content"].strip() and event.get("content"):
                         current_segment["content"] = event["content"]
-                    if event.get("reasoning_content"):
+                    if include_reasoning_content and event.get("reasoning_content"):
                         current_segment["reasoning_content"] = str(event["reasoning_content"])
                     persist_segments()
 
                 data = {key: value for key, value in event.items() if key != "type"}
+                if not include_reasoning_content:
+                    data.pop("reasoning_content", None)
                 prompt_logger.log_event(event_type, data)
                 yield _sse(event_type, data)
 
