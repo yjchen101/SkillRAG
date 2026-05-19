@@ -4,9 +4,36 @@ import json
 import tempfile
 import unittest
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import AsyncMock, patch
 
+from graph.context_compressor import CompressionResult, ContextCompressor
 from graph.session_manager import SessionManager
+
+
+def structured_summary(
+    current_goal: str,
+    confirmed_facts: str,
+    key_decisions: str,
+    completed_work: str,
+    open_issues: str,
+    next_steps: str,
+) -> str:
+    return "\n".join(
+        (
+            "## Current goal",
+            current_goal,
+            "## Confirmed facts",
+            confirmed_facts,
+            "## Key decisions",
+            key_decisions,
+            "## Completed work",
+            completed_work,
+            "## Open issues",
+            open_issues,
+            "## Next steps",
+            next_steps,
+        )
+    )
 
 
 class ContextCompressionPersistenceTests(unittest.TestCase):
@@ -277,6 +304,492 @@ class ContextCompressionPersistenceTests(unittest.TestCase):
 
         self.assertEqual(len(archive_files), 0)
         self.assertEqual(saved["messages"], [{"role": "user", "content": "first question"}])
+
+
+class ContextCompressorTests(unittest.IsolatedAsyncioTestCase):
+    def _create_base_dir(self, tmp: str) -> Path:
+        base_dir = Path(tmp)
+        workspace_dir = base_dir / "workspace"
+        workspace_dir.mkdir(parents=True)
+        for name, content in (
+            ("SOUL.md", "soul"),
+            ("IDENTITY.md", "identity"),
+            ("USER.md", "user"),
+            ("AGENTS.md", "agents"),
+        ):
+            (workspace_dir / name).write_text(content, encoding="utf-8")
+        return base_dir
+
+    async def test_compress_if_needed_keeps_recent_turns_and_writes_fresh_summary(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            base_dir = self._create_base_dir(tmp)
+            manager = SessionManager(base_dir)
+            session = manager.create_session("Auto Compression")
+            session_id = str(session["id"])
+
+            manager.save_message(session_id, "user", "turn 1 user")
+            manager.save_message(
+                session_id,
+                "assistant",
+                "turn 1 assistant",
+                reasoning_content="turn 1 reasoning",
+            )
+            manager.save_message(session_id, "user", "turn 2 user")
+            manager.save_message(
+                session_id,
+                "assistant",
+                "turn 2 assistant",
+                tool_calls=[{"id": "call-2", "type": "tool"}],
+            )
+            manager.save_message(session_id, "user", "turn 3 user")
+            manager.save_message(session_id, "assistant", "turn 3 assistant")
+
+            seen_inputs: list[tuple[str, list[dict[str, str]]]] = []
+
+            async def summarizer(previous_summary: str, archived_messages: list[dict[str, str]]) -> str:
+                seen_inputs.append((previous_summary, archived_messages))
+                return structured_summary(
+                    "fresh summary",
+                    "confirmed facts",
+                    "key decisions",
+                    "completed work",
+                    "open issues",
+                    "next steps",
+                )
+
+            compressor = ContextCompressor(
+                session_manager=manager,
+                base_dir=base_dir,
+                rag_mode_getter=lambda: False,
+                target_budget_tokens=1,
+                keep_recent_turns=2,
+                summary_max_chars=1_200,
+                summarizer=summarizer,
+            )
+
+            saved_before = manager.load_session_record(session_id)
+            saved_before["compressed_context"] = "old summary"
+            manager._write_session(saved_before)
+
+            result = await compressor.compress_if_needed(session_id)
+            saved = manager.load_session_record(session_id)
+
+        self.assertIsInstance(result, CompressionResult)
+        assert result is not None
+        self.assertEqual(result.reason, "prompt_tokens_exceeded")
+        self.assertFalse(result.degraded)
+        self.assertEqual(
+            result.summary,
+            structured_summary(
+                "fresh summary",
+                "confirmed facts",
+                "key decisions",
+                "completed work",
+                "open issues",
+                "next steps",
+            ),
+        )
+        self.assertEqual(result.compressed_message_count, 2)
+        self.assertEqual(result.kept_recent_turn_count, 2)
+        self.assertEqual(len(seen_inputs), 1)
+        self.assertEqual(seen_inputs[0][0], "old summary")
+        self.assertEqual(
+            seen_inputs[0][1],
+            [
+                {"role": "user", "content": "turn 1 user"},
+                {
+                    "role": "assistant",
+                    "content": "turn 1 assistant",
+                    "reasoning_content": "turn 1 reasoning",
+                },
+            ],
+        )
+        self.assertEqual(
+            saved["compressed_context"],
+            structured_summary(
+                "fresh summary",
+                "confirmed facts",
+                "key decisions",
+                "completed work",
+                "open issues",
+                "next steps",
+            ),
+        )
+        self.assertEqual(
+            saved["messages"],
+            [
+                {"role": "user", "content": "turn 2 user"},
+                {
+                    "role": "assistant",
+                    "content": "turn 2 assistant",
+                    "tool_calls": [{"id": "call-2", "type": "tool"}],
+                },
+                {"role": "user", "content": "turn 3 user"},
+                {"role": "assistant", "content": "turn 3 assistant"},
+            ],
+        )
+        self.assertEqual(saved["compression_state"]["trigger_reason"], "prompt_tokens_exceeded")
+        self.assertEqual(saved["compression_state"]["kept_recent_turn_count"], 2)
+        self.assertEqual(saved["compression_state"]["compressed_message_count"], 2)
+        self.assertFalse(saved["compression_state"]["degraded"])
+        self.assertEqual(saved["compression_events"][-1]["reason"], "prompt_tokens_exceeded")
+        self.assertFalse(saved["compression_events"][-1]["degraded"])
+
+    async def test_compress_if_needed_summary_failure_leaves_session_unchanged(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            base_dir = self._create_base_dir(tmp)
+            manager = SessionManager(base_dir)
+            session = manager.create_session("Auto Failure")
+            session_id = str(session["id"])
+
+            manager.save_message(session_id, "user", "turn 1 user")
+            manager.save_message(session_id, "assistant", "turn 1 assistant")
+            manager.save_message(session_id, "user", "turn 2 user")
+            manager.save_message(session_id, "assistant", "turn 2 assistant")
+
+            before = manager.load_session_record(session_id)
+            compressor = ContextCompressor(
+                session_manager=manager,
+                base_dir=base_dir,
+                rag_mode_getter=lambda: False,
+                target_budget_tokens=1,
+                keep_recent_turns=1,
+                summary_max_chars=1_200,
+                summarizer=AsyncMock(side_effect=RuntimeError("summary failed")),
+            )
+
+            result = await compressor.compress_if_needed(session_id)
+            after = manager.load_session_record(session_id)
+
+        self.assertIsNone(result)
+        self.assertEqual(after, before)
+
+    async def test_force_compress_returns_manual_reason_and_result_shape(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            base_dir = self._create_base_dir(tmp)
+            manager = SessionManager(base_dir)
+            session = manager.create_session("Manual Compression")
+            session_id = str(session["id"])
+
+            manager.save_message(session_id, "user", "turn 1 user")
+            manager.save_message(session_id, "assistant", "turn 1 assistant")
+            manager.save_message(session_id, "user", "turn 2 user")
+            manager.save_message(session_id, "assistant", "turn 2 assistant")
+
+            compressor = ContextCompressor(
+                session_manager=manager,
+                base_dir=base_dir,
+                rag_mode_getter=lambda: False,
+                target_budget_tokens=999_999,
+                keep_recent_turns=1,
+                summary_max_chars=1_200,
+                summarizer=AsyncMock(
+                    return_value=structured_summary(
+                        "manual summary",
+                        "confirmed facts",
+                        "key decisions",
+                        "completed work",
+                        "open issues",
+                        "next steps",
+                    )
+                ),
+            )
+
+            result = await compressor.force_compress(session_id=session_id, reason="manual_request")
+            saved = manager.load_session_record(session_id)
+
+        self.assertIsInstance(result, CompressionResult)
+        self.assertEqual(result.reason, "manual_request")
+        self.assertFalse(result.degraded)
+        self.assertEqual(
+            result.summary,
+            structured_summary(
+                "manual summary",
+                "confirmed facts",
+                "key decisions",
+                "completed work",
+                "open issues",
+                "next steps",
+            ),
+        )
+        self.assertEqual(result.compressed_message_count, 2)
+        self.assertEqual(result.kept_recent_turn_count, 1)
+        self.assertEqual(saved["compression_state"]["trigger_reason"], "manual_request")
+        self.assertFalse(saved["compression_state"]["degraded"])
+        self.assertEqual(saved["compression_events"][-1]["reason"], "manual_request")
+        self.assertFalse(saved["compression_events"][-1]["degraded"])
+        self.assertEqual(
+            result.to_dict(),
+            {
+                "session_id": session_id,
+                "reason": "manual_request",
+                "summary": structured_summary(
+                    "manual summary",
+                    "confirmed facts",
+                    "key decisions",
+                    "completed work",
+                    "open issues",
+                    "next steps",
+                ),
+                "pre_compress_tokens": result.pre_compress_tokens,
+                "post_compress_tokens": result.post_compress_tokens,
+                "target_budget_tokens": 999_999,
+                "compressed_message_count": 2,
+                "kept_recent_turn_count": 1,
+                "degraded": False,
+            },
+        )
+
+    async def test_force_compress_falls_back_for_short_session_without_full_window(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            base_dir = self._create_base_dir(tmp)
+            manager = SessionManager(base_dir)
+            session = manager.create_session("Short Session")
+            session_id = str(session["id"])
+
+            manager.save_message(session_id, "user", "one question")
+            manager.save_message(
+                session_id,
+                "assistant",
+                "one answer",
+                reasoning_content="hidden chain of thought",
+                tool_calls=[{"id": "call-short", "type": "tool"}],
+            )
+
+            compressor = ContextCompressor(
+                session_manager=manager,
+                base_dir=base_dir,
+                rag_mode_getter=lambda: False,
+                target_budget_tokens=999_999,
+                keep_recent_turns=2,
+                summary_max_chars=1_200,
+                summarizer=AsyncMock(
+                    return_value=structured_summary(
+                        "short session summary",
+                        "confirmed facts",
+                        "key decisions",
+                        "completed work",
+                        "open issues",
+                        "next steps",
+                    )
+                ),
+            )
+
+            result = await compressor.force_compress(session_id=session_id, reason="manual_request")
+            saved = manager.load_session_record(session_id)
+            archive_files = sorted((base_dir / "sessions" / "archive").glob(f"{session_id}_*.json"))
+            archive_payload = json.loads(archive_files[0].read_text(encoding="utf-8"))
+
+        self.assertEqual(result.compressed_message_count, 2)
+        self.assertEqual(result.kept_recent_turn_count, 0)
+        self.assertEqual(saved["messages"], [])
+        self.assertEqual(saved["compression_state"]["compressed_message_count"], 2)
+        self.assertEqual(saved["compression_state"]["kept_recent_turn_count"], 0)
+        self.assertEqual(
+            archive_payload["messages"],
+            [
+                {"role": "user", "content": "one question"},
+                {
+                    "role": "assistant",
+                    "content": "one answer",
+                    "reasoning_content": "hidden chain of thought",
+                    "tool_calls": [{"id": "call-short", "type": "tool"}],
+                },
+            ],
+        )
+
+    async def test_compress_if_needed_keeps_incomplete_user_tail_as_recent_turn(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            base_dir = self._create_base_dir(tmp)
+            manager = SessionManager(base_dir)
+            session = manager.create_session("Incomplete Tail")
+            session_id = str(session["id"])
+
+            manager.save_message(session_id, "user", "turn 1 user")
+            manager.save_message(session_id, "assistant", "turn 1 assistant")
+            manager.save_message(session_id, "user", "turn 2 user")
+
+            compressor = ContextCompressor(
+                session_manager=manager,
+                base_dir=base_dir,
+                rag_mode_getter=lambda: False,
+                target_budget_tokens=1,
+                keep_recent_turns=1,
+                summary_max_chars=1_200,
+                summarizer=AsyncMock(
+                    return_value=structured_summary(
+                        "incomplete tail summary",
+                        "confirmed facts",
+                        "key decisions",
+                        "completed work",
+                        "open issues",
+                        "next steps",
+                    )
+                ),
+            )
+
+            result = await compressor.compress_if_needed(session_id)
+            saved = manager.load_session_record(session_id)
+
+        self.assertIsInstance(result, CompressionResult)
+        assert result is not None
+        self.assertEqual(result.compressed_message_count, 2)
+        self.assertEqual(result.kept_recent_turn_count, 1)
+        self.assertEqual(
+            saved["messages"],
+            [{"role": "user", "content": "turn 2 user"}],
+        )
+
+    async def test_compress_if_needed_keeps_multi_message_assistant_turn_together(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            base_dir = self._create_base_dir(tmp)
+            manager = SessionManager(base_dir)
+            session = manager.create_session("Multi Assistant Turn")
+            session_id = str(session["id"])
+
+            manager.save_message(session_id, "user", "turn 1 user")
+            manager.save_message(
+                session_id,
+                "assistant",
+                "turn 1 assistant A",
+                reasoning_content="turn 1 reasoning",
+            )
+            manager.save_message(
+                session_id,
+                "assistant",
+                "turn 1 assistant B",
+                tool_calls=[{"id": "call-1b", "type": "tool"}],
+            )
+            manager.save_message(session_id, "user", "turn 2 user")
+            manager.save_message(
+                session_id,
+                "assistant",
+                "turn 2 assistant A",
+                reasoning_content="turn 2 reasoning",
+            )
+            manager.save_message(
+                session_id,
+                "assistant",
+                "turn 2 assistant B",
+                tool_calls=[{"id": "call-2b", "type": "tool"}],
+            )
+
+            compressor = ContextCompressor(
+                session_manager=manager,
+                base_dir=base_dir,
+                rag_mode_getter=lambda: False,
+                target_budget_tokens=1,
+                keep_recent_turns=1,
+                summary_max_chars=1_200,
+                summarizer=AsyncMock(
+                    return_value=structured_summary(
+                        "multi assistant summary",
+                        "confirmed facts",
+                        "key decisions",
+                        "completed work",
+                        "open issues",
+                        "next steps",
+                    )
+                ),
+            )
+
+            result = await compressor.compress_if_needed(session_id)
+            saved = manager.load_session_record(session_id)
+
+        self.assertIsInstance(result, CompressionResult)
+        assert result is not None
+        self.assertEqual(result.compressed_message_count, 3)
+        self.assertEqual(result.kept_recent_turn_count, 1)
+        self.assertEqual(
+            saved["messages"],
+            [
+                {"role": "user", "content": "turn 2 user"},
+                {
+                    "role": "assistant",
+                    "content": "turn 2 assistant A",
+                    "reasoning_content": "turn 2 reasoning",
+                },
+                {
+                    "role": "assistant",
+                    "content": "turn 2 assistant B",
+                    "tool_calls": [{"id": "call-2b", "type": "tool"}],
+                },
+            ],
+        )
+
+    async def test_force_compress_repairs_partial_summary_and_marks_degraded(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            base_dir = self._create_base_dir(tmp)
+            manager = SessionManager(base_dir)
+            session = manager.create_session("Partial Repair")
+            session_id = str(session["id"])
+
+            manager.save_message(session_id, "user", "turn 1 user")
+            manager.save_message(session_id, "assistant", "turn 1 assistant")
+            manager.save_message(session_id, "user", "turn 2 user")
+            manager.save_message(session_id, "assistant", "turn 2 assistant")
+
+            saved_before = manager.load_session_record(session_id)
+            saved_before["compressed_context"] = structured_summary(
+                "old goal",
+                "old facts",
+                "old decisions",
+                "old work",
+                "old issues",
+                "old steps",
+            )
+            manager._write_session(saved_before)
+
+            compressor = ContextCompressor(
+                session_manager=manager,
+                base_dir=base_dir,
+                rag_mode_getter=lambda: False,
+                target_budget_tokens=999_999,
+                keep_recent_turns=1,
+                summary_max_chars=1_200,
+                summarizer=AsyncMock(return_value="## Current goal\nupdated goal"),
+            )
+
+            result = await compressor.force_compress(session_id=session_id, reason="manual_request")
+            saved = manager.load_session_record(session_id)
+
+        self.assertTrue(result.degraded)
+        self.assertTrue(saved["compression_state"]["degraded"])
+        self.assertTrue(saved["compression_events"][-1]["degraded"])
+        self.assertIn("updated goal", saved["compressed_context"])
+        self.assertIn("## Confirmed facts", saved["compressed_context"])
+
+    async def test_force_compress_repairs_empty_summary_and_marks_degraded(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            base_dir = self._create_base_dir(tmp)
+            manager = SessionManager(base_dir)
+            session = manager.create_session("Empty Repair")
+            session_id = str(session["id"])
+
+            manager.save_message(session_id, "user", "turn 1 user")
+            manager.save_message(session_id, "assistant", "turn 1 assistant")
+            manager.save_message(session_id, "user", "turn 2 user")
+
+            compressor = ContextCompressor(
+                session_manager=manager,
+                base_dir=base_dir,
+                rag_mode_getter=lambda: False,
+                target_budget_tokens=999_999,
+                keep_recent_turns=1,
+                summary_max_chars=1_200,
+                summarizer=AsyncMock(return_value=""),
+            )
+
+            result = await compressor.force_compress(session_id=session_id, reason="manual_request")
+            saved = manager.load_session_record(session_id)
+
+        self.assertTrue(result.degraded)
+        self.assertTrue(saved["compression_state"]["degraded"])
+        self.assertTrue(saved["compression_events"][-1]["degraded"])
+        self.assertEqual(result.kept_recent_turn_count, 0)
+        self.assertEqual(saved["messages"], [])
+        self.assertIn("## Current goal", saved["compressed_context"])
+        self.assertIn("turn 2 user", saved["compressed_context"])
 
 
 if __name__ == "__main__":

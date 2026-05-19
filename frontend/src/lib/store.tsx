@@ -18,6 +18,7 @@ import {
   saveFile,
   setRagMode,
   streamChat,
+  type CompressionEvent,
   type Evidence,
   type KnowledgeIndexStatus,
   type RetrievalStep,
@@ -35,6 +36,7 @@ type Message = {
 
 type TokenStats = {
   system_tokens: number;
+  compressed_context_tokens: number;
   message_tokens: number;
   total_tokens: number;
 };
@@ -54,6 +56,7 @@ type AppStore = {
   inspectorWidth: number;
   tokenStats: TokenStats | null;
   knowledgeIndexStatus: KnowledgeIndexStatus | null;
+  compressionEvents: CompressionEvent[];
   createNewSession: () => Promise<void>;
   selectSession: (sessionId: string) => Promise<void>;
   sendMessage: (value: string) => Promise<void>;
@@ -129,6 +132,25 @@ function normalizeRetrievalStep(value: unknown): RetrievalStep | null {
   };
 }
 
+function normalizeCompressionEvent(value: unknown): CompressionEvent | null {
+  if (!value || typeof value !== "object") {
+    return null;
+  }
+
+  const item = value as Record<string, unknown>;
+  return {
+    timestamp: Number(item.timestamp ?? 0),
+    reason: String(item.reason ?? ""),
+    summary: String(item.summary ?? ""),
+    pre_compress_tokens: Number(item.pre_compress_tokens ?? 0),
+    post_compress_tokens: Number(item.post_compress_tokens ?? 0),
+    target_budget_tokens: Number(item.target_budget_tokens ?? 0),
+    compressed_message_count: Number(item.compressed_message_count ?? 0),
+    kept_recent_turn_count: Number(item.kept_recent_turn_count ?? 0),
+    degraded: Boolean(item.degraded ?? false)
+  };
+}
+
 function toUiMessages(history: Awaited<ReturnType<typeof getSessionHistory>>["messages"]) {
   return history.map((message) => ({
     id: makeId(),
@@ -157,6 +179,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [knowledgeIndexStatus, setKnowledgeIndexStatus] = useState<KnowledgeIndexStatus | null>(
     null
   );
+  const [compressionEvents, setCompressionEvents] = useState<CompressionEvent[]>([]);
 
   const editableFiles = useMemo(
     () => [...FIXED_FILES, ...skills.map((skill) => skill.path)],
@@ -181,6 +204,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
       getSessionTokens(sessionId)
     ]);
     setMessages(toUiMessages(history.messages));
+    setCompressionEvents(
+      (history.compression_events ?? [])
+        .map((event) => normalizeCompressionEvent(event))
+        .filter((event): event is CompressionEvent => event !== null)
+        .reverse()
+    );
     setTokenStats(tokens);
   }
 
@@ -189,6 +218,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     await refreshSessions();
     setCurrentSessionId(created.id);
     setMessages([]);
+    setCompressionEvents([]);
     setTokenStats(null);
   }
 
@@ -318,6 +348,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
               return;
             }
 
+            if (event === "compression") {
+              const compressionEvent = normalizeCompressionEvent(data);
+              if (compressionEvent) {
+                setCompressionEvents((prev) => [compressionEvent, ...prev]);
+              }
+              return;
+            }
+
             if (event === "title") {
               void refreshSessions();
               return;
@@ -371,6 +409,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       } else {
         setCurrentSessionId(null);
         setMessages([]);
+        setCompressionEvents([]);
         setTokenStats(null);
       }
     }
@@ -464,6 +503,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     inspectorWidth,
     tokenStats,
     knowledgeIndexStatus,
+    compressionEvents,
     createNewSession,
     selectSession,
     sendMessage,

@@ -2,17 +2,18 @@
 
 import { useEffect, useRef } from "react";
 
+import { CompressionCard } from "@/components/chat/CompressionCard";
 import { ChatInput } from "@/components/chat/ChatInput";
 import { ChatMessage } from "@/components/chat/ChatMessage";
 import { useAppStore } from "@/lib/store";
 
 export function ChatPanel() {
-  const { messages, sendMessage, isStreaming, tokenStats } = useAppStore();
+  const { messages, sendMessage, isStreaming, tokenStats, compressionEvents } = useAppStore();
   const endRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+  }, [compressionEvents, messages]);
 
   return (
     <section className="flex h-full min-w-0 flex-1 flex-col gap-4">
@@ -30,6 +31,8 @@ export function ChatPanel() {
 
       <div className="panel flex min-h-0 flex-1 flex-col rounded-[32px] p-5">
         <div className="flex-1 space-y-4 overflow-y-auto pr-2">
+          <CompressionCard events={compressionEvents} />
+
           {!messages.length && (
             <div className="rounded-[28px] border border-dashed border-[var(--color-line)] bg-white/45 p-8">
               <p className="text-xs uppercase tracking-[0.28em] text-[var(--color-ink-soft)]">

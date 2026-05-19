@@ -22,6 +22,18 @@ export type RetrievalStep = {
   results: Evidence[];
 };
 
+export type CompressionEvent = {
+  timestamp: number;
+  reason: string;
+  summary: string;
+  pre_compress_tokens: number;
+  post_compress_tokens: number;
+  target_budget_tokens: number;
+  compressed_message_count: number;
+  kept_recent_turn_count: number;
+  degraded: boolean;
+};
+
 export type KnowledgeIndexStatus = {
   ready: boolean;
   building: boolean;
@@ -45,6 +57,7 @@ export type SessionHistory = {
   created_at: number;
   updated_at: number;
   compressed_context?: string;
+  compression_events?: CompressionEvent[];
   messages: Array<{
     role: "user" | "assistant";
     content: string;
@@ -124,6 +137,7 @@ export async function getSessionHistory(sessionId: string) {
 export async function getSessionTokens(sessionId: string) {
   return request<{
     system_tokens: number;
+    compressed_context_tokens: number;
     message_tokens: number;
     total_tokens: number;
   }>(`/tokens/session/${sessionId}`);
@@ -158,7 +172,7 @@ export async function setRagMode(enabled: boolean) {
 }
 
 export async function compressSession(sessionId: string) {
-  return request<{ archived_count: number; remaining_count: number }>(
+  return request<CompressionEvent & { session_id: string }>(
     `/sessions/${sessionId}/compress`,
     { method: "POST" }
   );

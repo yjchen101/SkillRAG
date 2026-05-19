@@ -16,6 +16,7 @@ except ImportError:  # pragma: no cover - optional dependency at runtime
     ChatDeepSeek = None
 
 from config import get_settings, runtime_config
+from graph.context_compressor import ContextCompressor
 from graph.memory_indexer import memory_indexer
 from graph.prompt_builder import build_system_prompt
 from graph.session_manager import SessionManager
@@ -80,6 +81,7 @@ class AgentManager:
     def __init__(self) -> None:
         self.base_dir: Path | None = None
         self.session_manager: SessionManager | None = None
+        self.context_compressor: ContextCompressor | None = None
         self.tools = []
         self.tool_metadata: dict[str, dict[str, Any]] = {}
 
@@ -92,6 +94,16 @@ class AgentManager:
         self.tools = get_all_tools(base_dir, mcp_manager=mcp_manager)
         self.tool_metadata = dict(mcp_manager.get_tool_metadata())
         knowledge_orchestrator.configure(base_dir, self._build_chat_model)
+        settings = get_settings()
+        self.context_compressor = ContextCompressor(
+            session_manager=self.session_manager,
+            base_dir=base_dir,
+            rag_mode_getter=runtime_config.get_rag_mode,
+            target_budget_tokens=settings.compression_target_budget_tokens,
+            keep_recent_turns=settings.compression_keep_recent_turns,
+            summary_max_chars=settings.compression_summary_max_chars,
+            summarizer=self.summarize_for_compression,
+        )
 
     def get_mcp_tool_summaries(self) -> list[dict[str, str]]:
         return mcp_manager.get_tool_summaries()
@@ -611,6 +623,48 @@ class AgentManager:
             return summary[:500]
         except Exception:
             return transcript[:500]
+
+    async def summarize_for_compression(
+        self,
+        previous_summary: str,
+        archived_messages: list[dict[str, Any]],
+    ) -> str:
+        prompt = (
+            "请根据已有摘要和新增归档对话，重新生成一份结构化中文摘要。"
+            "输出必须包含以下小节：Current goal、Confirmed facts、Key decisions、"
+            "Completed work、Open issues、Next steps。"
+            "保持信息准确、去重，不要附加解释。"
+        )
+        lines: list[str] = []
+        if previous_summary.strip():
+            lines.append(f"[Previous summary]\n{previous_summary.strip()}")
+        if archived_messages:
+            transcript_lines: list[str] = []
+            for item in archived_messages:
+                role = item.get("role", "assistant")
+                content = str(item.get("content", "") or "")
+                if content:
+                    transcript_lines.append(f"{role}: {content}")
+            if transcript_lines:
+                lines.append("[Archived messages]\n" + "\n".join(transcript_lines))
+
+        response = await self._build_chat_model().ainvoke(
+            [
+                {"role": "system", "content": prompt},
+                {"role": "user", "content": "\n\n".join(lines)},
+            ]
+        )
+        return _stringify_content(getattr(response, "content", "")).strip()
+
+    async def maybe_compress_session_after_turn(self, session_id: str) -> dict[str, Any] | None:
+        settings = get_settings()
+        if not settings.compression_enabled or self.context_compressor is None:
+            return None
+
+        result = await self.context_compressor.compress_if_needed(session_id)
+        if result is None:
+            return None
+        return result.to_dict()
 
 
 agent_manager = AgentManager()

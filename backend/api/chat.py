@@ -29,6 +29,30 @@ def _new_segment() -> dict[str, Any]:
     return {"content": "", "tool_calls": [], "retrieval_steps": [], "reasoning_content": ""}
 
 
+async def _collect_post_turn_events(
+    *,
+    session_id: str,
+    request_message: str,
+    done_payload: dict[str, Any],
+    is_first_user_message: bool,
+    generate_title,
+    set_title,
+    maybe_compress,
+) -> list[dict[str, Any]]:
+    events: list[dict[str, Any]] = []
+    if is_first_user_message:
+        title = await generate_title(request_message)
+        set_title(session_id, title)
+        events.append({"type": "title", "session_id": session_id, "title": title})
+
+    compression = await maybe_compress(session_id)
+    if compression:
+        events.append({"type": "compression", **compression})
+
+    events.append({"type": "done", **done_payload})
+    return events
+
+
 def _build_full_prompt(
     base_dir: Any,
     rag_mode: bool,
@@ -189,19 +213,30 @@ async def chat(payload: ChatRequest):
                     if include_reasoning_content and event.get("reasoning_content"):
                         current_segment["reasoning_content"] = str(event["reasoning_content"])
                     persist_segments()
+                    done_payload = {key: value for key, value in event.items() if key != "type"}
+                    if not include_reasoning_content:
+                        done_payload.pop("reasoning_content", None)
+                    queued_events = await _collect_post_turn_events(
+                        session_id=payload.session_id,
+                        request_message=payload.message,
+                        done_payload=done_payload,
+                        is_first_user_message=is_first_user_message,
+                        generate_title=agent_manager.generate_title,
+                        set_title=session_manager.set_title,
+                        maybe_compress=agent_manager.maybe_compress_session_after_turn,
+                    )
+                    for queued_event in queued_events:
+                        queued_type = queued_event["type"]
+                        queued_data = {key: value for key, value in queued_event.items() if key != "type"}
+                        prompt_logger.log_event(queued_type, queued_data)
+                        yield _sse(queued_type, queued_data)
+                    return
 
                 data = {key: value for key, value in event.items() if key != "type"}
                 if not include_reasoning_content:
                     data.pop("reasoning_content", None)
                 prompt_logger.log_event(event_type, data)
                 yield _sse(event_type, data)
-
-                if event_type == "done" and is_first_user_message:
-                    title = await agent_manager.generate_title(payload.message)
-                    session_manager.set_title(payload.session_id, title)
-                    title_data = {"session_id": payload.session_id, "title": title}
-                    prompt_logger.log_event("title", title_data)
-                    yield _sse("title", title_data)
         except Exception as exc:
             persist_segments(fallback_content=f"请求失败: {str(exc) or 'unknown error'}")
             prompt_logger.log_error(str(exc) or "unknown error")

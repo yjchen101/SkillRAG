@@ -8,17 +8,16 @@ router = APIRouter()
 
 
 @router.post("/sessions/{session_id}/compress")
-async def compress_session(session_id: str) -> dict[str, int]:
-    session_manager = agent_manager.session_manager
-    if session_manager is None:
-        raise HTTPException(status_code=503, detail="Agent manager is not initialized")
+async def compress_session(session_id: str) -> dict[str, int | str | bool]:
+    compressor = agent_manager.context_compressor
+    if compressor is None:
+        raise HTTPException(status_code=503, detail="Context compressor is not initialized")
 
-    record = session_manager.get_history(session_id)
-    messages = record.get("messages", [])
-    if len(messages) < 4:
-        raise HTTPException(status_code=400, detail="At least 4 messages are required")
+    try:
+        result = await compressor.force_compress(session_id=session_id, reason="manual_request")
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail="Failed to compress session") from exc
 
-    n_messages = max(4, len(messages) // 2)
-    summary = await agent_manager.summarize_history(messages[:n_messages])
-    result = session_manager.compress_history(session_id, summary, n_messages)
-    return result
+    return result.to_dict()
