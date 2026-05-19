@@ -76,6 +76,10 @@ class Settings:
     mcp_config_path: Path | None = None
     mcp_tool_timeout_seconds: int = 20
     mcp_retry_times: int = 1
+    compression_enabled: bool = True
+    compression_target_budget_tokens: int = 24_000
+    compression_keep_recent_turns: int = 3
+    compression_summary_max_chars: int = 1_200
 
 
 def _parse_bool(value: str | None, default: bool) -> bool:
@@ -96,6 +100,13 @@ def _parse_int(value: str | None, default: int) -> int:
         return int(value.strip())
     except (TypeError, ValueError):
         return default
+
+
+def _parse_positive_int(value: str | None, default: int) -> int:
+    parsed = _parse_int(value, default)
+    if parsed <= 0:
+        return default
+    return parsed
 
 
 def _load_env_file() -> Path:
@@ -269,6 +280,13 @@ def get_settings() -> Settings:
         mcp_config_path=mcp_config_path,
         mcp_tool_timeout_seconds=_parse_int(_first_config_value("MCP_TOOL_TIMEOUT_SECONDS"), 20),
         mcp_retry_times=_parse_int(_first_config_value("MCP_RETRY_TIMES"), 1),
+        compression_enabled=_parse_bool(_first_config_value("COMPRESSION_ENABLED"), True),
+        compression_target_budget_tokens=_parse_positive_int(
+            _first_config_value("COMPRESSION_TARGET_BUDGET_TOKENS"),
+            24_000,
+        ),
+        compression_keep_recent_turns=_parse_positive_int(_first_config_value("COMPRESSION_KEEP_RECENT_TURNS"), 3),
+        compression_summary_max_chars=_parse_positive_int(_first_config_value("COMPRESSION_SUMMARY_MAX_CHARS"), 1_200),
     )
 
 
