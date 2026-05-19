@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 import time
 import uuid
 from pathlib import Path
@@ -18,6 +19,9 @@ class SessionManager:
     def _session_path(self, session_id: str) -> Path:
         return self.sessions_dir / f"{session_id}.json"
 
+    def _archive_path(self, session_id: str, archived_at: float) -> Path:
+        return self.archive_dir / f"{session_id}_{int(archived_at)}_{uuid.uuid4().hex[:8]}.json"
+
     def _default_record(self, session_id: str, title: str = "新会话") -> dict[str, Any]:
         now = time.time()
         return {
@@ -26,6 +30,8 @@ class SessionManager:
             "created_at": now,
             "updated_at": now,
             "compressed_context": "",
+            "compression_state": {},
+            "compression_events": [],
             "messages": [],
         }
 
@@ -48,16 +54,21 @@ class SessionManager:
         raw.setdefault("created_at", time.time())
         raw.setdefault("updated_at", raw["created_at"])
         raw.setdefault("compressed_context", "")
+        raw.setdefault("compression_state", {})
+        raw.setdefault("compression_events", [])
         raw.setdefault("messages", [])
         return raw
 
     def _write_session(self, record: dict[str, Any]) -> None:
         session_id = str(record["id"])
         record["updated_at"] = time.time()
-        self._session_path(session_id).write_text(
+        target_path = self._session_path(session_id)
+        temp_path = target_path.with_name(f"{target_path.name}.{uuid.uuid4().hex}.tmp")
+        temp_path.write_text(
             json.dumps(record, ensure_ascii=False, indent=2),
             encoding="utf-8",
         )
+        os.replace(temp_path, target_path)
 
     def create_session(self, title: str = "新会话") -> dict[str, Any]:
         session_id = uuid.uuid4().hex
@@ -155,34 +166,73 @@ class SessionManager:
         if path.exists():
             path.unlink()
 
-    def compress_history(self, session_id: str, summary: str, n_messages: int) -> dict[str, int]:
+    def apply_compression(
+        self,
+        session_id: str,
+        fresh_summary: str,
+        kept_messages: list[dict[str, Any]],
+        archived_messages: list[dict[str, Any]],
+        compression_state: dict[str, Any] | None = None,
+        compression_event: dict[str, Any] | None = None,
+    ) -> dict[str, int]:
         record = self._read_session_file(session_id)
-        messages = record.get("messages", [])
-        archived = messages[:n_messages]
-        remaining = messages[n_messages:]
+        current_messages = list(record.get("messages", []))
+        rewritten_messages = list(archived_messages) + list(kept_messages)
+        if rewritten_messages != current_messages:
+            raise ValueError(
+                "archived_messages and kept_messages must exactly rewrite the current session messages"
+            )
 
-        archive_path = self.archive_dir / f"{session_id}_{int(time.time())}.json"
+        archived_at = time.time()
+        archive_path = self._archive_path(session_id, archived_at)
         archive_payload = {
             "session_id": session_id,
-            "archived_at": time.time(),
-            "messages": archived,
+            "archived_at": archived_at,
+            "messages": archived_messages,
         }
         archive_path.write_text(
             json.dumps(archive_payload, ensure_ascii=False, indent=2),
             encoding="utf-8",
         )
 
+        record["compressed_context"] = fresh_summary.strip()
+        record["messages"] = list(kept_messages)
+        record["compression_state"] = dict(compression_state or {})
+        events = list(record.get("compression_events", []))
+        if compression_event:
+            events.append(dict(compression_event))
+        record["compression_events"] = events
+        try:
+            self._write_session(record)
+        except Exception:
+            if archive_path.exists():
+                archive_path.unlink()
+            raise
+        return {
+            "archived_count": len(archived_messages),
+            "remaining_count": len(kept_messages),
+        }
+
+    def compress_history(self, session_id: str, summary: str, n_messages: int) -> dict[str, int]:
+        record = self._read_session_file(session_id)
+        messages = record.get("messages", [])
+        archived = messages[:n_messages]
+        remaining = messages[n_messages:]
+
         existing_summary = record.get("compressed_context", "").strip()
         if existing_summary:
-            record["compressed_context"] = f"{existing_summary}\n---\n{summary.strip()}"
+            fresh_summary = f"{existing_summary}\n---\n{summary.strip()}"
         else:
-            record["compressed_context"] = summary.strip()
-        record["messages"] = remaining
-        self._write_session(record)
-        return {
-            "archived_count": len(archived),
-            "remaining_count": len(remaining),
-        }
+            fresh_summary = summary.strip()
+
+        return self.apply_compression(
+            session_id=session_id,
+            fresh_summary=fresh_summary,
+            kept_messages=remaining,
+            archived_messages=archived,
+            compression_state=dict(record.get("compression_state", {})),
+            compression_event=None,
+        )
 
     def get_compressed_context(self, session_id: str) -> str:
         return self._read_session_file(session_id).get("compressed_context", "")
