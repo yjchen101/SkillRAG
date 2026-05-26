@@ -2,6 +2,7 @@
 
 import { MessageSquare, Plus, Trash2 } from "lucide-react";
 
+import { formatRelativeTime } from "@/lib/relativeTime";
 import { useAppStore } from "@/lib/store";
 
 function preview(text: string) {
@@ -56,6 +57,9 @@ export function Sidebar() {
                   <p className="font-medium">{session.title}</p>
                   <p className="mt-1 text-xs text-[var(--color-ink-soft)]">
                     {session.message_count} 条消息
+                  </p>
+                  <p className="mt-1 text-xs text-[var(--color-ink-soft)]">
+                    活跃于 {formatRelativeTime(session.updated_at)}
                   </p>
                 </div>
                 <MessageSquare className="mt-1 text-[var(--color-ink-soft)]" size={16} />
