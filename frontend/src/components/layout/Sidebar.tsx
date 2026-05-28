@@ -1,6 +1,7 @@
 "use client";
 
-import { MessageSquare, Plus, Trash2 } from "lucide-react";
+import { Check, MessageSquare, Pencil, Plus, Trash2, X } from "lucide-react";
+import { useEffect, useState } from "react";
 
 import { formatRelativeTime } from "@/lib/relativeTime";
 import { useAppStore } from "@/lib/store";
@@ -16,8 +17,49 @@ export function Sidebar() {
     selectSession,
     createNewSession,
     removeSession,
+    renameCurrentSession,
     messages
   } = useAppStore();
+  const [editingSessionId, setEditingSessionId] = useState<string | null>(null);
+  const [draftTitle, setDraftTitle] = useState("");
+
+  useEffect(() => {
+    if (!editingSessionId) {
+      return;
+    }
+
+    const current = sessions.find((session) => session.id === editingSessionId);
+    if (!current) {
+      setEditingSessionId(null);
+      setDraftTitle("");
+    }
+  }, [editingSessionId, sessions]);
+
+  function startRename(sessionId: string, title: string) {
+    setEditingSessionId(sessionId);
+    setDraftTitle(title);
+  }
+
+  function cancelRename() {
+    setEditingSessionId(null);
+    setDraftTitle("");
+  }
+
+  async function submitRename() {
+    if (!editingSessionId) {
+      return;
+    }
+
+    const title = draftTitle.trim();
+    if (!title) {
+      cancelRename();
+      return;
+    }
+
+    await selectSession(editingSessionId);
+    await renameCurrentSession(title);
+    cancelRename();
+  }
 
   return (
     <aside className="panel flex h-full flex-col rounded-[30px] p-4">
@@ -47,32 +89,83 @@ export function Sidebar() {
             }`}
             key={session.id}
           >
-            <button
-              className="w-full text-left"
-              onClick={() => void selectSession(session.id)}
-              type="button"
-            >
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="font-medium">{session.title}</p>
-                  <p className="mt-1 text-xs text-[var(--color-ink-soft)]">
-                    {session.message_count} 条消息
-                  </p>
-                  <p className="mt-1 text-xs text-[var(--color-ink-soft)]">
-                    活跃于 {formatRelativeTime(session.updated_at)}
-                  </p>
+            {editingSessionId === session.id ? (
+              <div className="space-y-3">
+                <input
+                  autoFocus
+                  className="w-full rounded-2xl border border-[var(--color-line)] bg-white/80 px-3 py-2 text-sm outline-none"
+                  onChange={(event) => setDraftTitle(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter") {
+                      event.preventDefault();
+                      void submitRename();
+                    }
+                    if (event.key === "Escape") {
+                      event.preventDefault();
+                      cancelRename();
+                    }
+                  }}
+                  value={draftTitle}
+                />
+                <div className="flex items-center gap-2 text-xs">
+                  <button
+                    className="flex items-center gap-1 rounded-full bg-ocean px-3 py-1.5 text-white"
+                    onClick={() => void submitRename()}
+                    type="button"
+                  >
+                    <Check size={14} />
+                    保存
+                  </button>
+                  <button
+                    className="flex items-center gap-1 rounded-full border border-[var(--color-line)] bg-white/60 px-3 py-1.5 text-[var(--color-ink-soft)]"
+                    onClick={cancelRename}
+                    type="button"
+                  >
+                    <X size={14} />
+                    取消
+                  </button>
                 </div>
-                <MessageSquare className="mt-1 text-[var(--color-ink-soft)]" size={16} />
               </div>
-            </button>
-            <button
-              className="mt-3 flex items-center gap-2 text-xs text-[var(--color-ember)]"
-              onClick={() => void removeSession(session.id)}
-              type="button"
-            >
-              <Trash2 size={14} />
-              删除
-            </button>
+            ) : (
+              <>
+                <button
+                  className="w-full text-left"
+                  onClick={() => void selectSession(session.id)}
+                  type="button"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="font-medium">{session.title}</p>
+                      <p className="mt-1 text-xs text-[var(--color-ink-soft)]">
+                        {session.message_count} 条消息
+                      </p>
+                      <p className="mt-1 text-xs text-[var(--color-ink-soft)]">
+                        活跃于 {formatRelativeTime(session.updated_at)}
+                      </p>
+                    </div>
+                    <MessageSquare className="mt-1 text-[var(--color-ink-soft)]" size={16} />
+                  </div>
+                </button>
+                <div className="mt-3 flex items-center gap-4 text-xs">
+                  <button
+                    className="flex items-center gap-2 text-[var(--color-ink-soft)]"
+                    onClick={() => startRename(session.id, session.title)}
+                    type="button"
+                  >
+                    <Pencil size={14} />
+                    重命名
+                  </button>
+                  <button
+                    className="flex items-center gap-2 text-[var(--color-ember)]"
+                    onClick={() => void removeSession(session.id)}
+                    type="button"
+                  >
+                    <Trash2 size={14} />
+                    删除
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         ))}
       </div>

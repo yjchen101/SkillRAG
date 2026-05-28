@@ -10,7 +10,6 @@ export function Navbar() {
     ragMode,
     toggleRagMode,
     compressCurrentSession,
-    renameCurrentSession,
     rebuildKnowledgeIndex,
     knowledgeIndexStatus,
     sessions,
@@ -37,21 +36,7 @@ export function Navbar() {
           <p className="text-xs uppercase tracking-[0.32em] text-[var(--color-ink-soft)]">
             skill-rag
           </p>
-          <div className="flex items-center gap-3">
-            <h1 className="text-xl font-semibold tracking-[-0.04em]">{currentTitle}</h1>
-            <button
-              className="rounded-full border border-[var(--color-line)] px-3 py-1 text-xs text-[var(--color-ink-soft)]"
-              onClick={() => {
-                const next = window.prompt("重命名当前会话", currentTitle);
-                if (next) {
-                  void renameCurrentSession(next);
-                }
-              }}
-              type="button"
-            >
-              Rename
-            </button>
-          </div>
+          <h1 className="text-xl font-semibold tracking-[-0.04em]">{currentTitle}</h1>
         </div>
       </div>
 
