@@ -16,8 +16,13 @@ export function ChatInput({
     <div className="panel rounded-[28px] p-3">
       <textarea
         className="min-h-28 w-full resize-none rounded-[22px] border border-[var(--color-line)] bg-white/70 px-4 py-3 outline-none"
+        disabled={disabled}
         onChange={(event) => setValue(event.target.value)}
         onKeyDown={(event) => {
+          if (disabled) {
+            return;
+          }
+
           if ((event.metaKey || event.ctrlKey) && event.key === "Enter") {
             event.preventDefault();
             const nextValue = value.trim();
@@ -28,7 +33,7 @@ export function ChatInput({
             setValue("");
           }
         }}
-        placeholder="输入你的问题，Cmd/Ctrl + Enter 发送"
+        placeholder={disabled ? "正在生成回复..." : "输入你的问题，Cmd/Ctrl + Enter 发送"}
         value={value}
       />
       <div className="mt-3 flex items-center justify-between">
@@ -49,7 +54,7 @@ export function ChatInput({
           type="button"
         >
           <SendHorizonal size={16} />
-          发送
+          {disabled ? "生成中" : "发送"}
         </button>
       </div>
     </div>
