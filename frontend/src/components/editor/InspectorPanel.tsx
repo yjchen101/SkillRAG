@@ -1,7 +1,8 @@
 "use client";
 
 import Editor from "@monaco-editor/react";
-import { Save } from "lucide-react";
+import { Save, Search } from "lucide-react";
+import { useMemo, useState } from "react";
 
 import { useAppStore } from "@/lib/store";
 
@@ -15,6 +16,16 @@ export function InspectorPanel() {
     updateInspectorContent,
     saveInspector
   } = useAppStore();
+  const [fileFilter, setFileFilter] = useState("");
+
+  const filteredFiles = useMemo(() => {
+    const query = fileFilter.trim().toLowerCase();
+    if (!query) {
+      return editableFiles;
+    }
+
+    return editableFiles.filter((path) => path.toLowerCase().includes(query));
+  }, [editableFiles, fileFilter]);
 
   return (
     <aside className="panel flex h-full flex-col rounded-[30px] p-4">
@@ -35,8 +46,19 @@ export function InspectorPanel() {
         </button>
       </div>
 
+      <label className="mb-3 flex items-center gap-2 rounded-2xl border border-[var(--color-line)] bg-white/55 px-3 py-2 text-sm text-[var(--color-ink-soft)]">
+        <Search size={16} />
+        <input
+          className="min-w-0 flex-1 bg-transparent text-[var(--color-ink)] outline-none placeholder:text-[var(--color-ink-soft)]"
+          onChange={(event) => setFileFilter(event.target.value)}
+          placeholder="搜索文件路径"
+          type="search"
+          value={fileFilter}
+        />
+      </label>
+
       <div className="mb-4 flex flex-wrap gap-2">
-        {editableFiles.map((path) => (
+        {filteredFiles.map((path) => (
           <button
             className={`rounded-full px-3 py-1 text-xs ${
               path === inspectorPath
@@ -50,6 +72,11 @@ export function InspectorPanel() {
             {path}
           </button>
         ))}
+        {!filteredFiles.length && (
+          <div className="w-full rounded-2xl border border-dashed border-[var(--color-line)] bg-white/35 px-3 py-4 text-center text-sm text-[var(--color-ink-soft)]">
+            没有匹配的文件
+          </div>
+        )}
       </div>
 
       <div className="overflow-hidden rounded-[26px] border border-[var(--color-line)]">
