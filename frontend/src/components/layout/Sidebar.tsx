@@ -1,7 +1,7 @@
 "use client";
 
-import { Check, MessageSquare, Pencil, Plus, Trash2, X } from "lucide-react";
-import { useEffect, useState } from "react";
+import { Check, MessageSquare, Pencil, Plus, Search, Trash2, X } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 
 import { formatRelativeTime } from "@/lib/relativeTime";
 import { useAppStore } from "@/lib/store";
@@ -22,6 +22,16 @@ export function Sidebar() {
   } = useAppStore();
   const [editingSessionId, setEditingSessionId] = useState<string | null>(null);
   const [draftTitle, setDraftTitle] = useState("");
+  const [sessionFilter, setSessionFilter] = useState("");
+
+  const filteredSessions = useMemo(() => {
+    const query = sessionFilter.trim().toLowerCase();
+    if (!query) {
+      return sessions;
+    }
+
+    return sessions.filter((session) => session.title.toLowerCase().includes(query));
+  }, [sessionFilter, sessions]);
 
   useEffect(() => {
     if (!editingSessionId) {
@@ -79,8 +89,19 @@ export function Sidebar() {
         </button>
       </div>
 
+      <label className="mb-3 flex items-center gap-2 rounded-2xl border border-[var(--color-line)] bg-white/55 px-3 py-2 text-sm text-[var(--color-ink-soft)]">
+        <Search size={16} />
+        <input
+          className="min-w-0 flex-1 bg-transparent text-[var(--color-ink)] outline-none placeholder:text-[var(--color-ink-soft)]"
+          onChange={(event) => setSessionFilter(event.target.value)}
+          placeholder="搜索会话标题"
+          type="search"
+          value={sessionFilter}
+        />
+      </label>
+
       <div className="space-y-2 overflow-y-auto pr-1">
-        {sessions.map((session) => (
+        {filteredSessions.map((session) => (
           <div
             className={`rounded-3xl border px-4 py-3 transition ${
               session.id === currentSessionId
@@ -168,6 +189,11 @@ export function Sidebar() {
             )}
           </div>
         ))}
+        {!filteredSessions.length && (
+          <div className="rounded-3xl border border-dashed border-[var(--color-line)] bg-white/35 px-4 py-6 text-center text-sm text-[var(--color-ink-soft)]">
+            没有匹配的会话
+          </div>
+        )}
       </div>
 
       <div className="mt-4 flex min-h-0 flex-1 flex-col rounded-[24px] border border-[var(--color-line)] bg-white/40 p-3">
