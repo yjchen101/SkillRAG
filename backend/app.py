@@ -9,6 +9,7 @@ from api.chat import router as chat_router
 from api.compress import router as compress_router
 from api.config_api import router as config_router
 from api.files import router as files_router
+from api.knowledge_capture import router as knowledge_capture_router
 from api.knowledge_index import router as knowledge_index_router
 from api.sessions import router as sessions_router
 from api.tokens import router as tokens_router
@@ -55,6 +56,7 @@ app.include_router(tokens_router, prefix="/api", tags=["tokens"])
 app.include_router(compress_router, prefix="/api", tags=["compress"])
 app.include_router(config_router, prefix="/api", tags=["config"])
 app.include_router(knowledge_index_router, prefix="/api", tags=["knowledge"])
+app.include_router(knowledge_capture_router, prefix="/api", tags=["knowledge"])
 
 
 @app.get("/health")

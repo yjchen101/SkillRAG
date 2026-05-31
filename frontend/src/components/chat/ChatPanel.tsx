@@ -8,7 +8,14 @@ import { ChatMessage } from "@/components/chat/ChatMessage";
 import { useAppStore } from "@/lib/store";
 
 export function ChatPanel() {
-  const { messages, sendMessage, isStreaming, tokenStats, compressionEvents } = useAppStore();
+  const {
+    messages,
+    sendMessage,
+    isStreaming,
+    tokenStats,
+    compressionEvents,
+    captureMessageAsKnowledge
+  } = useAppStore();
   const endRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -51,9 +58,12 @@ export function ChatPanel() {
           {messages.map((message) => (
             <ChatMessage
               content={message.content}
+              id={message.id}
               key={message.id}
+              onCapture={captureMessageAsKnowledge}
               retrievalSteps={message.retrievalSteps}
               role={message.role}
+              sessionIndex={message.sessionIndex}
               toolCalls={message.toolCalls}
             />
           ))}

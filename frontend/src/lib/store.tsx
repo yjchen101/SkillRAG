@@ -3,6 +3,7 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 
 import {
+  captureMessageAsKnowledge as captureMessageAsKnowledgeRequest,
   compressSession,
   createSession,
   deleteSession,
@@ -32,6 +33,7 @@ type Message = {
   content: string;
   toolCalls: ToolCall[];
   retrievalSteps: RetrievalStep[];
+  sessionIndex?: number;
 };
 
 type TokenStats = {
@@ -67,6 +69,7 @@ type AppStore = {
   updateInspectorContent: (value: string) => void;
   saveInspector: () => Promise<void>;
   compressCurrentSession: () => Promise<void>;
+  captureMessageAsKnowledge: (messageId: string) => Promise<{ path: string; title: string } | null>;
   rebuildKnowledgeIndex: () => Promise<void>;
   setSidebarWidth: (width: number) => void;
   setInspectorWidth: (width: number) => void;
@@ -152,11 +155,12 @@ function normalizeCompressionEvent(value: unknown): CompressionEvent | null {
 }
 
 function toUiMessages(history: Awaited<ReturnType<typeof getSessionHistory>>["messages"]) {
-  return history.map((message) => ({
+  return history.map((message, index) => ({
     id: makeId(),
     role: message.role,
     content: message.content ?? "",
     toolCalls: message.tool_calls ?? [],
+    sessionIndex: index,
     retrievalSteps: (message.retrieval_steps ?? [])
       .map((step) => normalizeRetrievalStep(step))
       .filter((step): step is RetrievalStep => step !== null)
@@ -442,6 +446,25 @@ export function AppProvider({ children }: { children: ReactNode }) {
     await refreshSessions();
   }
 
+  async function captureMessageAsKnowledge(messageId: string) {
+    if (!currentSessionId) {
+      return null;
+    }
+
+    const message = messages.find((item) => item.id === messageId);
+    if (!message || typeof message.sessionIndex !== "number") {
+      return null;
+    }
+
+    const result = await captureMessageAsKnowledgeRequest(
+      currentSessionId,
+      message.sessionIndex
+    );
+    await loadInspectorFile(result.path);
+    await refreshKnowledgeIndexStatus();
+    return result;
+  }
+
   async function rebuildKnowledgeIndex() {
     await rebuildKnowledgeIndexRequest();
     await refreshKnowledgeIndexStatus();
@@ -514,6 +537,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     updateInspectorContent,
     saveInspector,
     compressCurrentSession,
+    captureMessageAsKnowledge,
     rebuildKnowledgeIndex,
     setSidebarWidth,
     setInspectorWidth

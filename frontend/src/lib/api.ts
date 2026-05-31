@@ -66,6 +66,12 @@ export type SessionHistory = {
   }>;
 };
 
+export type KnowledgeCaptureResponse = {
+  ok: boolean;
+  path: string;
+  title: string;
+};
+
 export type StreamHandlers = {
   onEvent: (event: string, data: Record<string, unknown>) => void;
 };
@@ -176,6 +182,19 @@ export async function compressSession(sessionId: string) {
     `/sessions/${sessionId}/compress`,
     { method: "POST" }
   );
+}
+
+export async function captureMessageAsKnowledge(
+  sessionId: string,
+  messageIndex: number
+) {
+  return request<KnowledgeCaptureResponse>("/knowledge/captures", {
+    method: "POST",
+    body: JSON.stringify({
+      session_id: sessionId,
+      message_index: messageIndex
+    })
+  });
 }
 
 export async function getKnowledgeIndexStatus() {
