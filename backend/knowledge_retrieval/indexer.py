@@ -84,14 +84,51 @@ class KnowledgeIndexer:
         return embed
 
     def status(self) -> IndexStatus:
+        freshness = self._freshness()
         return IndexStatus(
             ready=bool(self._documents) and (self._vector_ready or self._bm25_ready),
             building=self._building,
             last_built_at=self._last_built_at,
             indexed_files=len({item["source_path"] for item in self._documents}),
+            needs_rebuild=freshness["needs_rebuild"],
+            stale_files=freshness["stale_files"],
+            latest_source_mtime=freshness["latest_source_mtime"],
             vector_ready=self._vector_ready,
             bm25_ready=self._bm25_ready,
         )
+
+    def _supported_source_files(self) -> list[Path]:
+        if not self._knowledge_dir.exists():
+            return []
+        supported_suffixes = {".md", ".json"}
+        return [
+            path
+            for path in sorted(self._knowledge_dir.rglob("*"))
+            if path.is_file() and path.suffix.lower() in supported_suffixes
+        ]
+
+    def _freshness(self) -> dict[str, Any]:
+        source_files = self._supported_source_files()
+        source_paths = {self._relative_path(path) for path in source_files}
+        indexed_paths = {str(item.get("source_path", "")) for item in self._documents}
+        latest_source_mtime = max((path.stat().st_mtime for path in source_files), default=None)
+
+        stale_paths: set[str] = set()
+        if self._last_built_at is None:
+            stale_paths.update(source_paths)
+        else:
+            for path in source_files:
+                if path.stat().st_mtime > self._last_built_at:
+                    stale_paths.add(self._relative_path(path))
+
+        stale_paths.update(source_paths - indexed_paths)
+        stale_paths.update(indexed_paths - source_paths)
+
+        return {
+            "needs_rebuild": bool(stale_paths),
+            "stale_files": len(stale_paths),
+            "latest_source_mtime": latest_source_mtime,
+        }
 
     def is_building(self) -> bool:
         return self._building

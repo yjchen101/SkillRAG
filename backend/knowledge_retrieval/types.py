@@ -83,6 +83,9 @@ class IndexStatus:
     building: bool
     last_built_at: float | None
     indexed_files: int
+    needs_rebuild: bool
+    stale_files: int
+    latest_source_mtime: float | None
     vector_ready: bool
     bm25_ready: bool
 

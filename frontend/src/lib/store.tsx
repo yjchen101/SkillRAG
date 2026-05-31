@@ -435,6 +435,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
     await saveFile(inspectorPath, inspectorContent);
     setInspectorDirty(false);
     await refreshSkills();
+    if (inspectorPath.startsWith("knowledge/")) {
+      await refreshKnowledgeIndexStatus();
+    }
   }
 
   async function compressCurrentSession() {

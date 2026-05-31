@@ -39,6 +39,9 @@ export type KnowledgeIndexStatus = {
   building: boolean;
   last_built_at: number | null;
   indexed_files: number;
+  needs_rebuild: boolean;
+  stale_files: number;
+  latest_source_mtime: number | null;
   vector_ready: boolean;
   bm25_ready: boolean;
 };
