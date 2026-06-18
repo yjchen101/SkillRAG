@@ -1,6 +1,14 @@
 "use client";
 
-import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode
+} from "react";
 
 import {
   captureMessageAsKnowledge as captureMessageAsKnowledgeRequest,
@@ -26,6 +34,12 @@ import {
   type SessionSummary,
   type ToolCall
 } from "@/lib/api";
+import {
+  createNotification,
+  dismissNotification as dismissNotificationModel,
+  type AppNotification,
+  type NotificationTone
+} from "@/lib/notifications";
 
 type Message = {
   id: string;
@@ -59,6 +73,10 @@ type AppStore = {
   tokenStats: TokenStats | null;
   knowledgeIndexStatus: KnowledgeIndexStatus | null;
   compressionEvents: CompressionEvent[];
+  notifications: AppNotification[];
+  isInitializing: boolean;
+  workspaceError: string | null;
+  retryInitialize: () => Promise<void>;
   createNewSession: () => Promise<void>;
   selectSession: (sessionId: string) => Promise<void>;
   sendMessage: (value: string) => Promise<void>;
@@ -71,6 +89,7 @@ type AppStore = {
   compressCurrentSession: () => Promise<void>;
   captureMessageAsKnowledge: (messageId: string) => Promise<{ path: string; title: string } | null>;
   rebuildKnowledgeIndex: () => Promise<void>;
+  dismissNotification: (notificationId: string) => void;
   setSidebarWidth: (width: number) => void;
   setInspectorWidth: (width: number) => void;
 };
@@ -184,6 +203,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
     null
   );
   const [compressionEvents, setCompressionEvents] = useState<CompressionEvent[]>([]);
+  const [notifications, setNotifications] = useState<AppNotification[]>([]);
+  const [isInitializing, setIsInitializing] = useState(true);
+  const [workspaceError, setWorkspaceError] = useState<string | null>(null);
 
   const editableFiles = useMemo(
     () => [...FIXED_FILES, ...skills.map((skill) => skill.path)],
@@ -202,7 +224,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setKnowledgeIndexStatus(await getKnowledgeIndexStatus());
   }
 
-  async function refreshSessionDetails(sessionId: string) {
+  const refreshSessionDetails = useCallback(async (sessionId: string) => {
     const [history, tokens] = await Promise.all([
       getSessionHistory(sessionId),
       getSessionTokens(sessionId)
@@ -215,20 +237,77 @@ export function AppProvider({ children }: { children: ReactNode }) {
         .reverse()
     );
     setTokenStats(tokens);
+  }, []);
+
+  const notify = useCallback((title: string, tone: NotificationTone = "info", message?: string) => {
+    setNotifications((prev) => [
+      createNotification({ title, tone, message }),
+      ...prev
+    ].slice(0, 5));
+  }, []);
+
+  function dismissNotification(notificationId: string) {
+    setNotifications((prev) => dismissNotificationModel(prev, notificationId));
   }
 
+  const initializeWorkspace = useCallback(async () => {
+    setIsInitializing(true);
+    setWorkspaceError(null);
+    try {
+      const [initialSessions, rag, initialSkills, initialKnowledgeIndexStatus] = await Promise.all([
+        listSessions(),
+        getRagMode(),
+        listSkills(),
+        getKnowledgeIndexStatus()
+      ]);
+
+      setSessions(initialSessions);
+      setRagModeState(rag.enabled);
+      setSkills(initialSkills);
+      setKnowledgeIndexStatus(initialKnowledgeIndexStatus);
+
+      if (initialSessions.length) {
+        setCurrentSessionId(initialSessions[0].id);
+        await refreshSessionDetails(initialSessions[0].id);
+      } else {
+        const created = await createSession();
+        setCurrentSessionId(created.id);
+        setSessions([created]);
+      }
+
+      const file = await loadFile("memory/MEMORY.md");
+      setInspectorPath(file.path);
+      setInspectorContent(file.content);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      setWorkspaceError(message);
+      notify("初始化工作台失败", "error", message);
+    } finally {
+      setIsInitializing(false);
+    }
+  }, [notify, refreshSessionDetails]);
+
   async function createNewSession() {
-    const created = await createSession();
-    await refreshSessions();
-    setCurrentSessionId(created.id);
-    setMessages([]);
-    setCompressionEvents([]);
-    setTokenStats(null);
+    try {
+      const created = await createSession();
+      await refreshSessions();
+      setCurrentSessionId(created.id);
+      setMessages([]);
+      setCompressionEvents([]);
+      setTokenStats(null);
+      notify("已创建新会话", "success");
+    } catch (error) {
+      notify("创建会话失败", "error", error instanceof Error ? error.message : String(error));
+    }
   }
 
   async function selectSession(sessionId: string) {
-    setCurrentSessionId(sessionId);
-    await refreshSessionDetails(sessionId);
+    try {
+      setCurrentSessionId(sessionId);
+      await refreshSessionDetails(sessionId);
+    } catch (error) {
+      notify("加载会话失败", "error", error instanceof Error ? error.message : String(error));
+    }
   }
 
   async function ensureSession() {
@@ -246,8 +325,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
     if (!value.trim() || isStreaming) {
       return;
     }
+    if (isInitializing || workspaceError) {
+      notify("工作台尚未就绪", "error", workspaceError ?? "初始化完成后再发送消息");
+      return;
+    }
 
-    const sessionId = await ensureSession();
+    let sessionId: string;
+    try {
+      sessionId = await ensureSession();
+    } catch (error) {
+      notify("创建会话失败", "error", error instanceof Error ? error.message : String(error));
+      return;
+    }
+
     const userMessage: Message = {
       id: makeId(),
       role: "user",
@@ -375,10 +465,22 @@ export function AppProvider({ children }: { children: ReactNode }) {
           }
         }
       );
+    } catch (error) {
+      patchAssistant((message) => ({
+        ...message,
+        content:
+          message.content ||
+          `请求失败: ${error instanceof Error ? error.message : String(error)}`
+      }));
+      notify("消息发送失败", "error", error instanceof Error ? error.message : String(error));
     } finally {
       setIsStreaming(false);
-      await refreshSessions();
-      await refreshSessionDetails(sessionId);
+      try {
+        await refreshSessions();
+        await refreshSessionDetails(sessionId);
+      } catch (error) {
+        notify("刷新会话失败", "error", error instanceof Error ? error.message : String(error));
+      }
     }
   }
 
@@ -387,9 +489,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setRagModeState(next);
     try {
       await setRagMode(next);
+      notify(next ? "RAG 已开启" : "RAG 已关闭", "success");
     } catch (error) {
       setRagModeState(!next);
-      throw error;
+      notify("切换 RAG 失败", "error", error instanceof Error ? error.message : String(error));
     }
   }
 
@@ -397,33 +500,47 @@ export function AppProvider({ children }: { children: ReactNode }) {
     if (!currentSessionId || !title.trim()) {
       return;
     }
-    await renameSession(currentSessionId, title.trim());
-    await refreshSessions();
+    try {
+      await renameSession(currentSessionId, title.trim());
+      await refreshSessions();
+      notify("会话已重命名", "success");
+    } catch (error) {
+      notify("重命名失败", "error", error instanceof Error ? error.message : String(error));
+    }
   }
 
   async function removeSession(sessionId: string) {
-    await deleteSession(sessionId);
-    await refreshSessions();
-    if (currentSessionId === sessionId) {
-      const nextSessions = await listSessions();
-      setSessions(nextSessions);
-      if (nextSessions.length) {
-        setCurrentSessionId(nextSessions[0].id);
-        await refreshSessionDetails(nextSessions[0].id);
-      } else {
-        setCurrentSessionId(null);
-        setMessages([]);
-        setCompressionEvents([]);
-        setTokenStats(null);
+    try {
+      await deleteSession(sessionId);
+      await refreshSessions();
+      if (currentSessionId === sessionId) {
+        const nextSessions = await listSessions();
+        setSessions(nextSessions);
+        if (nextSessions.length) {
+          setCurrentSessionId(nextSessions[0].id);
+          await refreshSessionDetails(nextSessions[0].id);
+        } else {
+          setCurrentSessionId(null);
+          setMessages([]);
+          setCompressionEvents([]);
+          setTokenStats(null);
+        }
       }
+      notify("会话已删除", "success");
+    } catch (error) {
+      notify("删除会话失败", "error", error instanceof Error ? error.message : String(error));
     }
   }
 
   async function loadInspectorFile(path: string) {
-    setInspectorPath(path);
-    const file = await loadFile(path);
-    setInspectorContent(file.content);
-    setInspectorDirty(false);
+    try {
+      setInspectorPath(path);
+      const file = await loadFile(path);
+      setInspectorContent(file.content);
+      setInspectorDirty(false);
+    } catch (error) {
+      notify("加载文件失败", "error", error instanceof Error ? error.message : String(error));
+    }
   }
 
   function updateInspectorContent(value: string) {
@@ -432,11 +549,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }
 
   async function saveInspector() {
-    await saveFile(inspectorPath, inspectorContent);
-    setInspectorDirty(false);
-    await refreshSkills();
-    if (inspectorPath.startsWith("knowledge/")) {
-      await refreshKnowledgeIndexStatus();
+    try {
+      await saveFile(inspectorPath, inspectorContent);
+      setInspectorDirty(false);
+      await refreshSkills();
+      if (inspectorPath.startsWith("knowledge/")) {
+        await refreshKnowledgeIndexStatus();
+      }
+      notify("文件已保存", "success", inspectorPath);
+    } catch (error) {
+      notify("保存文件失败", "error", error instanceof Error ? error.message : String(error));
     }
   }
 
@@ -444,9 +566,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
     if (!currentSessionId) {
       return;
     }
-    await compressSession(currentSessionId);
-    await refreshSessionDetails(currentSessionId);
-    await refreshSessions();
+    try {
+      await compressSession(currentSessionId);
+      await refreshSessionDetails(currentSessionId);
+      await refreshSessions();
+      notify("会话上下文已压缩", "success");
+    } catch (error) {
+      notify("压缩失败", "error", error instanceof Error ? error.message : String(error));
+    }
   }
 
   async function captureMessageAsKnowledge(messageId: string) {
@@ -456,51 +583,38 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
     const message = messages.find((item) => item.id === messageId);
     if (!message || typeof message.sessionIndex !== "number") {
+      notify("无法沉淀这条消息", "error", "缺少可保存的会话消息索引");
       return null;
     }
 
-    const result = await captureMessageAsKnowledgeRequest(
-      currentSessionId,
-      message.sessionIndex
-    );
-    await loadInspectorFile(result.path);
-    await refreshKnowledgeIndexStatus();
-    return result;
+    try {
+      const result = await captureMessageAsKnowledgeRequest(
+        currentSessionId,
+        message.sessionIndex
+      );
+      await loadInspectorFile(result.path);
+      await refreshKnowledgeIndexStatus();
+      notify("已沉淀为知识", "success", result.path);
+      return result;
+    } catch (error) {
+      notify("沉淀知识失败", "error", error instanceof Error ? error.message : String(error));
+      return null;
+    }
   }
 
   async function rebuildKnowledgeIndex() {
-    await rebuildKnowledgeIndexRequest();
-    await refreshKnowledgeIndexStatus();
+    try {
+      await rebuildKnowledgeIndexRequest();
+      await refreshKnowledgeIndexStatus();
+      notify("已开始重建知识索引", "success");
+    } catch (error) {
+      notify("重建索引失败", "error", error instanceof Error ? error.message : String(error));
+    }
   }
 
   useEffect(() => {
-    void (async () => {
-      const [initialSessions, rag, initialSkills, initialKnowledgeIndexStatus] = await Promise.all([
-        listSessions(),
-        getRagMode(),
-        listSkills(),
-        getKnowledgeIndexStatus()
-      ]);
-
-      setSessions(initialSessions);
-      setRagModeState(rag.enabled);
-      setSkills(initialSkills);
-      setKnowledgeIndexStatus(initialKnowledgeIndexStatus);
-
-      if (initialSessions.length) {
-        setCurrentSessionId(initialSessions[0].id);
-        await refreshSessionDetails(initialSessions[0].id);
-      } else {
-        const created = await createSession();
-        setCurrentSessionId(created.id);
-        setSessions([created]);
-      }
-
-      const file = await loadFile("memory/MEMORY.md");
-      setInspectorPath(file.path);
-      setInspectorContent(file.content);
-    })();
-  }, []);
+    void initializeWorkspace();
+  }, [initializeWorkspace]);
 
   useEffect(() => {
     if (!knowledgeIndexStatus?.building) {
@@ -530,6 +644,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
     tokenStats,
     knowledgeIndexStatus,
     compressionEvents,
+    notifications,
+    isInitializing,
+    workspaceError,
+    retryInitialize: initializeWorkspace,
     createNewSession,
     selectSession,
     sendMessage,
@@ -542,6 +660,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     compressCurrentSession,
     captureMessageAsKnowledge,
     rebuildKnowledgeIndex,
+    dismissNotification,
     setSidebarWidth,
     setInspectorWidth
   };

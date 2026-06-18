@@ -1,8 +1,10 @@
 "use client";
 
 import { Database, FileSearch, Layers3, Search, Sparkles, type LucideIcon } from "lucide-react";
+import { useState } from "react";
 
 import type { RetrievalStep } from "@/lib/api";
+import { summarizeRetrievalSteps } from "@/lib/retrievalView";
 
 const STEP_META: Record<
   string,
@@ -52,16 +54,53 @@ const STEP_META: Record<
 };
 
 export function RetrievalCard({ steps }: { steps: RetrievalStep[] }) {
+  const [isOpen, setIsOpen] = useState(false);
+
   if (!steps.length) {
     return null;
   }
 
+  const summary = summarizeRetrievalSteps(steps);
+
   return (
-    <div className="mb-4 rounded-3xl border border-[rgba(15,139,141,0.18)] bg-[rgba(15,139,141,0.08)] p-4">
-      <div className="flex items-center gap-2 text-sm font-medium text-ocean">
-        <Database size={16} />
-        检索轨迹
-      </div>
+    <details
+      className="mb-4 rounded-3xl border border-[rgba(15,139,141,0.18)] bg-[rgba(15,139,141,0.08)] p-4"
+      onToggle={(event) => setIsOpen(event.currentTarget.open)}
+      open={isOpen}
+    >
+      <summary className="flex cursor-pointer list-none items-start gap-3 text-sm font-medium text-ocean">
+        <Database className="mt-0.5 shrink-0" size={16} />
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <span>检索轨迹</span>
+            <span className="rounded-full bg-white/70 px-2 py-1 text-[11px] font-normal text-[var(--color-ink-soft)]">
+              {summary.totalSteps} 步
+            </span>
+            <span className="rounded-full bg-white/70 px-2 py-1 text-[11px] font-normal text-[var(--color-ink-soft)]">
+              {summary.totalResults} 条证据
+            </span>
+            {summary.usedFallback && (
+              <span className="rounded-full bg-[rgba(212,106,74,0.12)] px-2 py-1 text-[11px] font-normal text-[var(--color-ember)]">
+                已 fallback
+              </span>
+            )}
+          </div>
+          <div className="mt-1 flex flex-wrap items-center gap-2 text-xs font-normal text-[var(--color-ink-soft)]">
+            {summary.stageCounts.map(([stage, count]) => {
+              const meta = STEP_META[stage] ?? STEP_META.skill;
+              return (
+                <span className={`rounded-full px-2 py-0.5 ${meta.badge}`} key={stage}>
+                  {meta.label} x {count}
+                </span>
+              );
+            })}
+            {summary.latestTitle && <span className="min-w-0 truncate">{summary.latestTitle}</span>}
+          </div>
+        </div>
+        <span className="shrink-0 text-xs font-normal text-[var(--color-ink-soft)]">
+          {isOpen ? "收起" : "展开"}
+        </span>
+      </summary>
 
       <div className="mt-3 space-y-3">
         {steps.map((step, index) => {
@@ -120,6 +159,6 @@ export function RetrievalCard({ steps }: { steps: RetrievalStep[] }) {
           );
         })}
       </div>
-    </div>
+    </details>
   );
 }

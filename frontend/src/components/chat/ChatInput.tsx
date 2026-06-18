@@ -5,17 +5,29 @@ import { useState } from "react";
 
 export function ChatInput({
   disabled,
+  placeholder,
   onSend
 }: {
   disabled: boolean;
+  placeholder?: string;
   onSend: (value: string) => Promise<void>;
 }) {
   const [value, setValue] = useState("");
 
+  function submit() {
+    const nextValue = value.trim();
+    if (disabled || !nextValue) {
+      return;
+    }
+
+    void onSend(nextValue);
+    setValue("");
+  }
+
   return (
     <div className="panel rounded-[28px] p-3">
       <textarea
-        className="min-h-28 w-full resize-none rounded-[22px] border border-[var(--color-line)] bg-white/70 px-4 py-3 outline-none"
+        className="min-h-28 w-full resize-none rounded-[22px] border border-[var(--color-line)] bg-white/70 px-4 py-3 outline-none transition focus:border-[rgba(15,139,141,0.45)] disabled:cursor-not-allowed disabled:bg-white/45"
         disabled={disabled}
         onChange={(event) => setValue(event.target.value)}
         onKeyDown={(event) => {
@@ -23,34 +35,25 @@ export function ChatInput({
             return;
           }
 
-          if ((event.metaKey || event.ctrlKey) && event.key === "Enter") {
+          if (event.key === "Enter" && !event.shiftKey) {
             event.preventDefault();
-            const nextValue = value.trim();
-            if (!nextValue) {
-              return;
-            }
-            void onSend(nextValue);
-            setValue("");
+            submit();
           }
         }}
-        placeholder={disabled ? "正在生成回复..." : "输入你的问题，Cmd/Ctrl + Enter 发送"}
+        placeholder={
+          placeholder ??
+          (disabled ? "正在生成回复..." : "输入你的问题，Enter 发送，Shift + Enter 换行")
+        }
         value={value}
       />
-      <div className="mt-3 flex items-center justify-between">
-        <p className="text-sm text-[var(--color-ink-soft)]">
-          支持工具调用、Memory 检索和多段响应。
+      <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <p className="text-sm leading-6 text-[var(--color-ink-soft)]">
+          {disabled ? "正在接收流式回复，完成后可继续追问。" : "支持工具调用、Memory 检索和多段响应。"}
         </p>
         <button
-          className="flex items-center gap-2 rounded-full bg-ocean px-4 py-2 text-sm text-white disabled:cursor-not-allowed disabled:bg-[rgba(15,139,141,0.45)]"
+          className="flex items-center justify-center gap-2 rounded-full bg-ocean px-4 py-2 text-sm text-white disabled:cursor-not-allowed disabled:bg-[rgba(15,139,141,0.45)] sm:min-w-24"
           disabled={disabled || !value.trim()}
-          onClick={() => {
-            const nextValue = value.trim();
-            if (!nextValue) {
-              return;
-            }
-            void onSend(nextValue);
-            setValue("");
-          }}
+          onClick={submit}
           type="button"
         >
           <SendHorizonal size={16} />

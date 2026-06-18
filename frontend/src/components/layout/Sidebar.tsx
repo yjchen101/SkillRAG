@@ -71,10 +71,19 @@ export function Sidebar() {
     cancelRename();
   }
 
+  function confirmRemove(sessionId: string, title: string) {
+    const confirmed = window.confirm(`删除会话「${title}」？此操作不可撤销。`);
+    if (!confirmed) {
+      return;
+    }
+
+    void removeSession(sessionId);
+  }
+
   return (
-    <aside className="panel flex h-full flex-col rounded-[30px] p-4">
+    <aside className="panel flex h-full min-h-[520px] flex-col rounded-[30px] p-4 xl:min-h-0">
       <div className="mb-4 flex items-center justify-between">
-        <div>
+        <div className="min-w-0">
           <p className="text-xs uppercase tracking-[0.28em] text-[var(--color-ink-soft)]">
             Sessions
           </p>
@@ -155,8 +164,8 @@ export function Sidebar() {
                   type="button"
                 >
                   <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <p className="font-medium">{session.title}</p>
+                    <div className="min-w-0">
+                      <p className="break-words font-medium">{session.title}</p>
                       <p className="mt-1 text-xs text-[var(--color-ink-soft)]">
                         {session.message_count} 条消息
                       </p>
@@ -178,7 +187,7 @@ export function Sidebar() {
                   </button>
                   <button
                     className="flex items-center gap-2 text-[var(--color-ember)]"
-                    onClick={() => void removeSession(session.id)}
+                    onClick={() => confirmRemove(session.id, session.title)}
                     type="button"
                   >
                     <Trash2 size={14} />
@@ -210,9 +219,16 @@ export function Sidebar() {
                 <span>{message.role}</span>
                 <span>{message.toolCalls.length} tools</span>
               </div>
-              <p className="text-sm text-[var(--color-ink-soft)]">{preview(message.content)}</p>
+              <p className="break-words text-sm text-[var(--color-ink-soft)]">
+                {preview(message.content)}
+              </p>
             </div>
           ))}
+          {!messages.length && (
+            <div className="rounded-2xl border border-dashed border-[var(--color-line)] bg-white/35 px-3 py-5 text-center text-sm text-[var(--color-ink-soft)]">
+              当前会话还没有消息
+            </div>
+          )}
         </div>
       </div>
     </aside>

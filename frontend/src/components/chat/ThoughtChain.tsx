@@ -1,9 +1,10 @@
 "use client";
 
 import { TerminalSquare } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 
 import type { ToolCall } from "@/lib/api";
+import { summarizeToolCalls } from "@/lib/toolCallView";
 
 function formatBlock(value: string) {
   const text = value.trim();
@@ -20,10 +21,7 @@ function formatBlock(value: string) {
 
 export function ThoughtChain({ toolCalls }: { toolCalls: ToolCall[] }) {
   const activeTool = [...toolCalls].reverse().find((toolCall) => !toolCall.output.trim()) ?? null;
-  const toolNames = useMemo(
-    () => Array.from(new Set(toolCalls.map((toolCall) => toolCall.tool))),
-    [toolCalls]
-  );
+  const summary = summarizeToolCalls(toolCalls);
   const [isOpen, setIsOpen] = useState(Boolean(activeTool));
 
   useEffect(() => {
@@ -45,11 +43,22 @@ export function ThoughtChain({ toolCalls }: { toolCalls: ToolCall[] }) {
       <summary className="flex cursor-pointer list-none items-start gap-3 text-sm font-medium text-[var(--color-ember)]">
         <TerminalSquare className="mt-0.5 shrink-0" size={16} />
         <div className="min-w-0 flex-1">
-          <div>
-            {activeTool ? `正在调用 ${activeTool.tool}` : `工具调用 ${toolCalls.length} 次`}
+          <div className="flex flex-wrap items-center gap-2">
+            <span>{activeTool ? `正在调用 ${activeTool.tool}` : "工具调用"}</span>
+            <span className="rounded-full bg-white/70 px-2 py-1 text-[11px] font-normal text-[var(--color-ink-soft)]">
+              {summary.totalCalls} 次
+            </span>
+            <span className="rounded-full bg-[rgba(15,139,141,0.12)] px-2 py-1 text-[11px] font-normal text-ocean">
+              {summary.finishedCalls} 已完成
+            </span>
+            {summary.runningCalls > 0 && (
+              <span className="rounded-full bg-[rgba(212,106,74,0.12)] px-2 py-1 text-[11px] font-normal text-[var(--color-ember)]">
+                {summary.runningCalls} 运行中
+              </span>
+            )}
           </div>
           <div className="truncate text-xs font-normal text-[var(--color-ink-soft)]">
-            {toolNames.join(" -> ")}
+            {summary.toolNames.join(" -> ")}
           </div>
         </div>
         <span className="shrink-0 text-xs font-normal text-[var(--color-ink-soft)]">

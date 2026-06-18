@@ -1,0 +1,24 @@
+import assert from "node:assert/strict";
+import test from "node:test";
+
+import { getWorkspaceStatusView } from "../src/lib/workspaceStatus.ts";
+
+test("getWorkspaceStatusView returns loading copy while initializing", () => {
+  assert.deepEqual(getWorkspaceStatusView({ isInitializing: true, error: null }), {
+    kind: "loading",
+    title: "正在连接后端",
+    message: "正在加载会话、技能、知识索引和工作区文件。"
+  });
+});
+
+test("getWorkspaceStatusView returns retryable error copy when initialization fails", () => {
+  assert.deepEqual(getWorkspaceStatusView({ isInitializing: false, error: "fetch failed" }), {
+    kind: "error",
+    title: "后端连接失败",
+    message: "fetch failed"
+  });
+});
+
+test("getWorkspaceStatusView returns null when the workspace is ready", () => {
+  assert.equal(getWorkspaceStatusView({ isInitializing: false, error: null }), null);
+});

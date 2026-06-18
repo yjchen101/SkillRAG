@@ -1,10 +1,13 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { ArrowDown, Sparkles } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 
 import { CompressionCard } from "@/components/chat/CompressionCard";
 import { ChatInput } from "@/components/chat/ChatInput";
 import { ChatMessage } from "@/components/chat/ChatMessage";
+import { isNearScrollBottom, shouldAutoScrollChat } from "@/lib/chatScroll";
+import { getStarterPrompts } from "@/lib/starterPrompts";
 import { useAppStore } from "@/lib/store";
 
 export function ChatPanel() {
@@ -14,30 +17,64 @@ export function ChatPanel() {
     isStreaming,
     tokenStats,
     compressionEvents,
-    captureMessageAsKnowledge
+    captureMessageAsKnowledge,
+    isInitializing,
+    workspaceError
   } = useAppStore();
+  const scrollRef = useRef<HTMLDivElement | null>(null);
   const endRef = useRef<HTMLDivElement | null>(null);
+  const [isAtBottom, setIsAtBottom] = useState(true);
+  const starterPrompts = getStarterPrompts();
+  const inputDisabled = isStreaming || isInitializing || Boolean(workspaceError);
 
   useEffect(() => {
+    if (shouldAutoScrollChat(isAtBottom)) {
+      endRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [compressionEvents, isAtBottom, messages]);
+
+  function updateScrollPosition() {
+    const container = scrollRef.current;
+    if (!container) {
+      return;
+    }
+
+    setIsAtBottom(
+      isNearScrollBottom({
+        scrollTop: container.scrollTop,
+        clientHeight: container.clientHeight,
+        scrollHeight: container.scrollHeight
+      })
+    );
+  }
+
+  function scrollToLatest() {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [compressionEvents, messages]);
+    setIsAtBottom(true);
+  }
 
   return (
-    <section className="flex h-full min-w-0 flex-1 flex-col gap-4">
-      <div className="panel flex items-center justify-between rounded-[30px] px-5 py-4">
-        <div>
+    <section className="flex h-full min-h-[640px] min-w-0 flex-1 flex-col gap-4 xl:min-h-0">
+      <div className="panel flex flex-col gap-3 rounded-[30px] px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0">
           <p className="text-xs uppercase tracking-[0.28em] text-[var(--color-ink-soft)]">
             Conversation
           </p>
-          <h2 className="text-lg font-semibold tracking-[-0.04em]">实时对话与检索轨迹</h2>
+          <h2 className="break-words text-lg font-semibold tracking-[-0.04em]">
+            实时对话与检索轨迹
+          </h2>
         </div>
         <div className="mono text-sm text-[var(--color-ink-soft)]">
           {tokenStats ? `${tokenStats.total_tokens} tokens` : "No metrics yet"}
         </div>
       </div>
 
-      <div className="panel flex min-h-0 flex-1 flex-col rounded-[32px] p-5">
-        <div className="flex-1 space-y-4 overflow-y-auto pr-2">
+      <div className="panel relative flex min-h-0 flex-1 flex-col rounded-[32px] p-5">
+        <div
+          className="flex-1 space-y-4 overflow-y-auto pr-2"
+          onScroll={updateScrollPosition}
+          ref={scrollRef}
+        >
           <CompressionCard events={compressionEvents} />
 
           {!messages.length && (
@@ -52,6 +89,25 @@ export function ChatPanel() {
                 你可以直接提问，也可以在右侧编辑 Memory、Skills 和 Workspace
                 文件。所有系统提示、会话和工具执行都可以追踪。
               </p>
+              <div className="mt-6 grid gap-3 lg:grid-cols-3">
+                {starterPrompts.map((starter) => (
+                  <button
+                    className="rounded-2xl border border-[var(--color-line)] bg-white/55 p-4 text-left transition hover:border-[rgba(15,139,141,0.35)] hover:bg-white/75 disabled:cursor-not-allowed disabled:opacity-55"
+                    disabled={inputDisabled}
+                    key={starter.id}
+                    onClick={() => void sendMessage(starter.prompt)}
+                    type="button"
+                  >
+                    <div className="flex items-center gap-2 text-sm font-medium text-ocean">
+                      <Sparkles size={15} />
+                      {starter.title}
+                    </div>
+                    <p className="mt-2 text-sm leading-6 text-[var(--color-ink-soft)]">
+                      {starter.description}
+                    </p>
+                  </button>
+                ))}
+              </div>
             </div>
           )}
 
@@ -69,9 +125,29 @@ export function ChatPanel() {
           ))}
           <div ref={endRef} />
         </div>
+        {!isAtBottom && (
+          <button
+            className="absolute bottom-5 right-6 flex items-center gap-2 rounded-full bg-[rgba(13,37,48,0.92)] px-4 py-2 text-sm text-white shadow-panel"
+            onClick={scrollToLatest}
+            type="button"
+          >
+            <ArrowDown size={16} />
+            回到最新
+          </button>
+        )}
       </div>
 
-      <ChatInput disabled={isStreaming} onSend={sendMessage} />
+      <ChatInput
+        disabled={inputDisabled}
+        onSend={sendMessage}
+        placeholder={
+          isInitializing
+            ? "正在连接后端，稍后即可发送"
+            : workspaceError
+              ? "后端连接失败，重试成功后再发送"
+              : undefined
+        }
+      />
     </section>
   );
 }
