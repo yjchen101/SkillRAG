@@ -10,7 +10,7 @@ export function getFileSearchEmptyMessage({
     return `没有匹配「${trimmedQuery}」的文件`;
   }
 
-  return totalCount === 0 ? "暂无可编辑文件" : "没有匹配的文件";
+  return totalCount === 0 ? "暂无可编辑文件，稍后重试" : "没有匹配的文件";
 }
 
 export function getFileFilterCountLabel({

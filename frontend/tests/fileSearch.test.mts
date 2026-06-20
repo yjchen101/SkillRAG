@@ -9,7 +9,10 @@ import {
 } from "../src/lib/fileSearch.ts";
 
 test("getFileSearchEmptyMessage shows a generic empty state without query", () => {
-  assert.equal(getFileSearchEmptyMessage({ query: "", totalCount: 0 }), "暂无可编辑文件");
+  assert.equal(
+    getFileSearchEmptyMessage({ query: "", totalCount: 0 }),
+    "暂无可编辑文件，稍后重试"
+  );
   assert.equal(getFileSearchEmptyMessage({ query: "   ", totalCount: 2 }), "没有匹配的文件");
 });
 
