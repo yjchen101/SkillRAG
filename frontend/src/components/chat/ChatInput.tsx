@@ -1,7 +1,9 @@
 "use client";
 
 import { SendHorizonal } from "lucide-react";
-import { useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
+
+import { getChatInputHeight } from "@/lib/chatInput";
 
 export function ChatInput({
   disabled,
@@ -13,6 +15,19 @@ export function ChatInput({
   onSend: (value: string) => Promise<void>;
 }) {
   const [value, setValue] = useState("");
+  const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+
+  useLayoutEffect(() => {
+    const textarea = textareaRef.current;
+    if (!textarea) {
+      return;
+    }
+
+    textarea.style.height = "auto";
+    const { height, overflowY } = getChatInputHeight(textarea.scrollHeight);
+    textarea.style.height = `${height}px`;
+    textarea.style.overflowY = overflowY;
+  }, [value]);
 
   function submit() {
     const nextValue = value.trim();
@@ -44,6 +59,7 @@ export function ChatInput({
           placeholder ??
           (disabled ? "正在生成回复..." : "输入你的问题，Enter 发送，Shift + Enter 换行")
         }
+        ref={textareaRef}
         value={value}
       />
       <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
