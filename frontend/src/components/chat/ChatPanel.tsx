@@ -13,6 +13,7 @@ import {
   shouldAutoScrollChat
 } from "@/lib/chatScroll";
 import {
+  getChatPanelIntroCopy,
   getChatPanelSectionLabels,
   getStarterPromptCountLabel,
   getStarterPrompts
@@ -37,6 +38,7 @@ export function ChatPanel() {
   const starterPrompts = getStarterPrompts();
   const starterPromptCountLabel = getStarterPromptCountLabel(starterPrompts.length);
   const chatPanelSectionLabels = getChatPanelSectionLabels();
+  const chatPanelIntroCopy = getChatPanelIntroCopy();
   const tokenStatsView = getTokenStatsView(tokenStats);
   const inputDisabled = isStreaming || isInitializing || Boolean(workspaceError);
   const inputAvailabilityCopy = getChatInputAvailabilityCopy({
@@ -101,11 +103,10 @@ export function ChatPanel() {
                 {chatPanelSectionLabels.ready}
               </p>
               <h3 className="mt-2 text-3xl font-semibold tracking-[-0.05em]">
-                一个本地、透明、文件驱动的 Agent 工作台
+                {chatPanelIntroCopy.title}
               </h3>
               <p className="mt-3 max-w-2xl text-[var(--color-ink-soft)]">
-                你可以直接提问，也可以在右侧编辑 Memory、Skills 和 Workspace
-                文件。所有系统提示、会话和工具执行都可以追踪。
+                {chatPanelIntroCopy.description}
               </p>
               <div className="mt-4 inline-flex rounded-full bg-white/70 px-3 py-1 text-xs text-[var(--color-ink-soft)]">
                 {starterPromptCountLabel}

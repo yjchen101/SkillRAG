@@ -3,6 +3,7 @@ import test from "node:test";
 
 import {
   getChatPanelSectionLabels,
+  getChatPanelIntroCopy,
   getStarterPromptCountLabel,
   getStarterPrompts
 } from "../src/lib/starterPrompts.ts";
@@ -44,5 +45,12 @@ test("getChatPanelSectionLabels localizes visible panel labels", () => {
   assert.deepEqual(getChatPanelSectionLabels(), {
     conversation: "对话",
     ready: "就绪"
+  });
+});
+
+test("getChatPanelIntroCopy uses localized workspace terms", () => {
+  assert.deepEqual(getChatPanelIntroCopy(), {
+    title: "一个本地、透明、文件驱动的 Agent 工作台",
+    description: "你可以直接提问，也可以在右侧编辑记忆、技能和工作区文件。所有系统提示、会话和工具执行都可以追踪。"
   });
 });
