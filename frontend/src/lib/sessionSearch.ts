@@ -22,6 +22,10 @@ export function getSessionFilterCountLabel({
   totalCount: number;
   query: string;
 }) {
+  if (totalCount === 0) {
+    return "暂无会话";
+  }
+
   return query.trim()
     ? `匹配 ${filteredCount} / ${totalCount} 个会话`
     : `共 ${totalCount} 个会话`;

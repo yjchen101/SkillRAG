@@ -23,6 +23,10 @@ test("getSessionSearchEmptyMessage includes the trimmed query", () => {
 
 test("getSessionFilterCountLabel reports filtered session totals", () => {
   assert.equal(
+    getSessionFilterCountLabel({ filteredCount: 0, totalCount: 0, query: "" }),
+    "暂无会话"
+  );
+  assert.equal(
     getSessionFilterCountLabel({ filteredCount: 2, totalCount: 8, query: "  report  " }),
     "匹配 2 / 8 个会话"
   );
