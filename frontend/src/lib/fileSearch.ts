@@ -1,6 +1,16 @@
-export function getFileSearchEmptyMessage(query: string) {
+export function getFileSearchEmptyMessage({
+  query,
+  totalCount
+}: {
+  query: string;
+  totalCount: number;
+}) {
   const trimmedQuery = query.trim();
-  return trimmedQuery ? `没有匹配「${trimmedQuery}」的文件` : "没有匹配的文件";
+  if (trimmedQuery) {
+    return `没有匹配「${trimmedQuery}」的文件`;
+  }
+
+  return totalCount === 0 ? "暂无可编辑文件" : "没有匹配的文件";
 }
 
 export function getFileFilterCountLabel({

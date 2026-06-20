@@ -9,12 +9,15 @@ import {
 } from "../src/lib/fileSearch.ts";
 
 test("getFileSearchEmptyMessage shows a generic empty state without query", () => {
-  assert.equal(getFileSearchEmptyMessage(""), "没有匹配的文件");
-  assert.equal(getFileSearchEmptyMessage("   "), "没有匹配的文件");
+  assert.equal(getFileSearchEmptyMessage({ query: "", totalCount: 0 }), "暂无可编辑文件");
+  assert.equal(getFileSearchEmptyMessage({ query: "   ", totalCount: 2 }), "没有匹配的文件");
 });
 
 test("getFileSearchEmptyMessage includes the trimmed query", () => {
-  assert.equal(getFileSearchEmptyMessage("  memory  "), "没有匹配「memory」的文件");
+  assert.equal(
+    getFileSearchEmptyMessage({ query: "  memory  ", totalCount: 2 }),
+    "没有匹配「memory」的文件"
+  );
 });
 
 test("getFileFilterCountLabel reports filtered file totals", () => {

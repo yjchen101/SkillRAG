@@ -189,7 +189,10 @@ export function InspectorPanel() {
         ))}
         {!filteredFiles.length && (
           <div className="w-full rounded-2xl border border-dashed border-[var(--color-line)] bg-white/35 px-3 py-4 text-center text-sm text-[var(--color-ink-soft)]">
-            {getFileSearchEmptyMessage(fileFilter)}
+            {getFileSearchEmptyMessage({
+              query: fileFilter,
+              totalCount: editableFiles.length
+            })}
           </div>
         )}
       </div>
