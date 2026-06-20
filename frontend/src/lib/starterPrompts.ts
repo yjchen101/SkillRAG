@@ -31,5 +31,9 @@ export function getStarterPrompts() {
 }
 
 export function getStarterPromptCountLabel(count: number) {
+  if (count === 0) {
+    return "暂无起步问题";
+  }
+
   return `${count} 个起步问题`;
 }

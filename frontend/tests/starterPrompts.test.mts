@@ -22,5 +22,6 @@ test("getStarterPrompts includes system, knowledge, and session-oriented prompts
 });
 
 test("getStarterPromptCountLabel explains available starter actions", () => {
+  assert.equal(getStarterPromptCountLabel(0), "暂无起步问题");
   assert.equal(getStarterPromptCountLabel(3), "3 个起步问题");
 });
