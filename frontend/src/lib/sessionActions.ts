@@ -59,3 +59,10 @@ export function getSessionActionButtonTitle({
 }) {
   return state.disabled && state.reason ? state.reason : actionLabel;
 }
+
+export function getCompressionActionButtonTitle(state: SessionActionState) {
+  return getSessionActionButtonTitle({
+    actionLabel: "压缩当前会话上下文",
+    state
+  });
+}

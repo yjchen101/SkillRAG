@@ -4,7 +4,10 @@ import { Database, FileSearch, Plus, Sparkles, Wrench } from "lucide-react";
 
 import { getKnowledgeIndexView } from "@/lib/knowledgeIndexView";
 import { getRagModeToggleTitle } from "@/lib/ragModeView";
-import { getSessionActionState } from "@/lib/sessionActions";
+import {
+  getCompressionActionButtonTitle,
+  getSessionActionState
+} from "@/lib/sessionActions";
 import { useAppStore } from "@/lib/store";
 
 export function Navbar() {
@@ -39,6 +42,7 @@ export function Navbar() {
     currentSessionId,
     requiresSession: true
   });
+  const compressionActionTitle = getCompressionActionButtonTitle(compressionActionState);
 
   return (
     <header className="panel flex flex-col gap-4 rounded-[30px] px-5 py-4 lg:flex-row lg:items-center lg:justify-between">
@@ -83,8 +87,8 @@ export function Navbar() {
           className="flex items-center gap-2 rounded-full border border-[var(--color-line)] bg-white/60 px-4 py-2 text-sm disabled:cursor-not-allowed disabled:text-[var(--color-ink-soft)]"
           disabled={compressionActionState.disabled}
           onClick={() => void compressCurrentSession()}
+          title={compressionActionTitle}
           type="button"
-          title={compressionActionState.reason ?? undefined}
         >
           <Wrench size={16} />
           压缩

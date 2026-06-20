@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import {
+  getCompressionActionButtonTitle,
   getSessionActionButtonTitle,
   getSessionActionState
 } from "../src/lib/sessionActions.ts";
@@ -94,5 +95,19 @@ test("getSessionActionButtonTitle explains disabled and enabled actions", () => 
       state: { disabled: true, reason: "正在生成回复，完成后再操作会话" }
     }),
     "正在生成回复，完成后再操作会话"
+  );
+});
+
+test("getCompressionActionButtonTitle explains compression availability", () => {
+  assert.equal(
+    getCompressionActionButtonTitle({ disabled: false, reason: null }),
+    "压缩当前会话上下文"
+  );
+  assert.equal(
+    getCompressionActionButtonTitle({
+      disabled: true,
+      reason: "当前没有可操作的会话"
+    }),
+    "当前没有可操作的会话"
   );
 });
