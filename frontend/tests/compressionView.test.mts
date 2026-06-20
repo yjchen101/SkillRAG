@@ -65,7 +65,7 @@ test("getCompressionRepairLabel explains degraded repaired summaries", () => {
 });
 
 test("getCompressionBudgetTargetLabel localizes target token budgets", () => {
-  assert.equal(getCompressionBudgetTargetLabel(4096), "目标 4096 tokens");
+  assert.equal(getCompressionBudgetTargetLabel(4096), "目标 4096 个 token");
 });
 
 test("getCompressionBudgetTitle localizes the budget panel heading", () => {

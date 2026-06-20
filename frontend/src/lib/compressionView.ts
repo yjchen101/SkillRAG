@@ -48,7 +48,7 @@ export function getCompressionRepairLabel() {
 }
 
 export function getCompressionBudgetTargetLabel(targetBudgetTokens: number) {
-  return `目标 ${targetBudgetTokens} tokens`;
+  return `目标 ${targetBudgetTokens} 个 token`;
 }
 
 export function getCompressionBudgetTitle() {
