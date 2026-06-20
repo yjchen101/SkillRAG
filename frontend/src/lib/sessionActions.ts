@@ -33,7 +33,7 @@ export function getSessionActionState({
   if (workspaceError) {
     return {
       disabled: true,
-      reason: "后端连接恢复后可操作会话"
+      reason: "工作台连接恢复后可操作会话"
     };
   }
 
