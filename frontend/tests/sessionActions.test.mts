@@ -3,6 +3,7 @@ import test from "node:test";
 
 import {
   getCompressionActionButtonTitle,
+  getNavbarNewSessionButtonTitle,
   getSessionActionButtonTitle,
   getSessionActionState
 } from "../src/lib/sessionActions.ts";
@@ -95,6 +96,20 @@ test("getSessionActionButtonTitle explains disabled and enabled actions", () => 
       state: { disabled: true, reason: "正在生成回复，完成后再操作会话" }
     }),
     "正在生成回复，完成后再操作会话"
+  );
+});
+
+test("getNavbarNewSessionButtonTitle explains navbar new session action", () => {
+  assert.equal(
+    getNavbarNewSessionButtonTitle({ disabled: false, reason: null }),
+    "创建新的会话"
+  );
+  assert.equal(
+    getNavbarNewSessionButtonTitle({
+      disabled: true,
+      reason: "工作台初始化完成后可操作会话"
+    }),
+    "工作台初始化完成后可操作会话"
   );
 });
 

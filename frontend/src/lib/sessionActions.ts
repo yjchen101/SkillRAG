@@ -66,3 +66,10 @@ export function getCompressionActionButtonTitle(state: SessionActionState) {
     state
   });
 }
+
+export function getNavbarNewSessionButtonTitle(state: SessionActionState) {
+  return getSessionActionButtonTitle({
+    actionLabel: "创建新的会话",
+    state
+  });
+}
