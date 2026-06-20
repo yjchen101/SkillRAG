@@ -5,7 +5,10 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
 import type { CompressionEvent } from "@/lib/api";
-import { getCompressionSavingsLabel } from "@/lib/compressionView";
+import {
+  getCompressionEventCountLabel,
+  getCompressionSavingsLabel
+} from "@/lib/compressionView";
 
 function formatTimestamp(timestamp: number) {
   if (!timestamp) {
@@ -36,11 +39,18 @@ export function CompressionCard({ events }: { events: CompressionEvent[] }) {
     return null;
   }
 
+  const countLabel = getCompressionEventCountLabel(events.length);
+
   return (
     <section className="mb-4 rounded-[28px] border border-[rgba(15,139,141,0.18)] bg-[rgba(15,139,141,0.08)] p-4">
-      <div className="flex items-center gap-2 text-sm font-medium text-[var(--color-ocean)]">
-        <Archive size={16} />
-        Compression
+      <div className="flex flex-wrap items-center gap-2 text-sm font-medium text-[var(--color-ocean)]">
+        <div className="flex items-center gap-2">
+          <Archive size={16} />
+          Compression
+        </div>
+        <span className="rounded-full bg-white/70 px-2 py-0.5 text-[11px] font-normal text-[var(--color-ink-soft)]">
+          {countLabel}
+        </span>
       </div>
 
       <div className="mt-3 space-y-3">

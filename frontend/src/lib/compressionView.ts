@@ -14,3 +14,7 @@ export function getCompressionSavingsLabel({
 
   return `节省 ${savedPercent}%`;
 }
+
+export function getCompressionEventCountLabel(count: number) {
+  return `最近 ${count} 次压缩`;
+}

@@ -1,7 +1,10 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { getCompressionSavingsLabel } from "../src/lib/compressionView.ts";
+import {
+  getCompressionEventCountLabel,
+  getCompressionSavingsLabel
+} from "../src/lib/compressionView.ts";
 
 test("getCompressionSavingsLabel reports saved token percentage", () => {
   assert.equal(
@@ -31,4 +34,9 @@ test("getCompressionSavingsLabel handles missing token baselines", () => {
     }),
     "节省 --"
   );
+});
+
+test("getCompressionEventCountLabel summarizes visible compression history", () => {
+  assert.equal(getCompressionEventCountLabel(1), "最近 1 次压缩");
+  assert.equal(getCompressionEventCountLabel(3), "最近 3 次压缩");
 });
