@@ -107,10 +107,10 @@ test("summarizeRetrievalSteps counts steps without evidence", () => {
 });
 
 test("getEvidenceChannelLabel maps evidence channels to Chinese labels", () => {
-  assert.equal(getEvidenceChannelLabel("memory"), "Memory");
-  assert.equal(getEvidenceChannelLabel("skill"), "Skill");
-  assert.equal(getEvidenceChannelLabel("vector"), "向量");
-  assert.equal(getEvidenceChannelLabel("bm25"), "BM25");
-  assert.equal(getEvidenceChannelLabel("fused"), "融合");
+  assert.equal(getEvidenceChannelLabel("memory"), "记忆证据");
+  assert.equal(getEvidenceChannelLabel("skill"), "技能证据");
+  assert.equal(getEvidenceChannelLabel("vector"), "向量检索");
+  assert.equal(getEvidenceChannelLabel("bm25"), "BM25 关键词检索");
+  assert.equal(getEvidenceChannelLabel("fused"), "融合排序");
   assert.equal(getEvidenceChannelLabel("unknown"), "其他证据");
 });

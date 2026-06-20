@@ -1,11 +1,11 @@
 import type { RetrievalStep } from "@/lib/api";
 
 const EVIDENCE_CHANNEL_LABELS: Record<string, string> = {
-  memory: "Memory",
-  skill: "Skill",
-  vector: "向量",
-  bm25: "BM25",
-  fused: "融合"
+  memory: "记忆证据",
+  skill: "技能证据",
+  vector: "向量检索",
+  bm25: "BM25 关键词检索",
+  fused: "融合排序"
 };
 
 export type RetrievalSummary = {
