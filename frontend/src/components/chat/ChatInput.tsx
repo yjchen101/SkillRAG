@@ -4,6 +4,7 @@ import { SendHorizonal, X } from "lucide-react";
 import { useLayoutEffect, useRef, useState } from "react";
 
 import {
+  getChatInputClearTitle,
   getChatInputCountLabel,
   getChatInputHeight,
   getChatInputSendTitle,
@@ -26,6 +27,7 @@ export function ChatInput({
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const countLabel = getChatInputCountLabel(value);
   const showClearButton = shouldShowChatInputClear(value, disabled);
+  const clearTitle = getChatInputClearTitle();
   const sendTitle = getChatInputSendTitle({ disabled, disabledReason, value });
 
   useLayoutEffect(() => {
@@ -91,7 +93,7 @@ export function ChatInput({
                 setValue("");
                 window.requestAnimationFrame(() => textareaRef.current?.focus());
               }}
-              title="清空输入"
+              title={clearTitle}
               type="button"
             >
               <X size={16} />

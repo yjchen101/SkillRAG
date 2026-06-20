@@ -47,6 +47,10 @@ export function getChatInputSendTitle({
   return "发送消息";
 }
 
+export function getChatInputClearTitle() {
+  return "清空当前输入";
+}
+
 export function shouldShowChatInputClear(value: string, disabled: boolean) {
   return !disabled && value.length > 0;
 }

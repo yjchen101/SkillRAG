@@ -4,6 +4,7 @@ import test from "node:test";
 import {
   CHAT_INPUT_MAX_HEIGHT,
   CHAT_INPUT_MIN_HEIGHT,
+  getChatInputClearTitle,
   getChatInputCountLabel,
   getChatInputHeight,
   getChatInputSendTitle,
@@ -75,4 +76,8 @@ test("getChatInputSendTitle explains why sending is unavailable", () => {
     }),
     "正在连接后端"
   );
+});
+
+test("getChatInputClearTitle explains the clear draft action", () => {
+  assert.equal(getChatInputClearTitle(), "清空当前输入");
 });
