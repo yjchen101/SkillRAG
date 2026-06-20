@@ -6,6 +6,7 @@ import { useLayoutEffect, useRef, useState } from "react";
 import {
   getChatInputClearTitle,
   getChatInputCountLabel,
+  getChatInputHelperText,
   getChatInputHeight,
   getChatInputSendTitle,
   shouldShowChatInputClear,
@@ -28,6 +29,7 @@ export function ChatInput({
   const countLabel = getChatInputCountLabel(value);
   const showClearButton = shouldShowChatInputClear(value, disabled);
   const clearTitle = getChatInputClearTitle();
+  const helperText = getChatInputHelperText(disabled);
   const sendTitle = getChatInputSendTitle({ disabled, disabledReason, value });
 
   useLayoutEffect(() => {
@@ -80,9 +82,7 @@ export function ChatInput({
       />
       <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex flex-wrap items-center gap-2 text-sm leading-6 text-[var(--color-ink-soft)]">
-          <span>
-            {disabled ? "正在接收流式回复，完成后可继续追问。" : "支持工具调用、Memory 检索和多段响应。"}
-          </span>
+          <span>{helperText}</span>
           <span className="rounded-full bg-white/60 px-2 py-0.5 text-xs">{countLabel}</span>
         </div>
         <div className="flex items-center gap-2">

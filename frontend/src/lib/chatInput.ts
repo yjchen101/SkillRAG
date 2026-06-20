@@ -88,6 +88,10 @@ export function getChatInputClearTitle() {
   return "清空当前输入";
 }
 
+export function getChatInputHelperText(disabled: boolean) {
+  return disabled ? "正在接收流式回复，完成后可继续追问。" : "支持工具调用、记忆检索和多段响应。";
+}
+
 export function shouldShowChatInputClear(value: string, disabled: boolean) {
   return !disabled && value.length > 0;
 }

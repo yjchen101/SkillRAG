@@ -7,6 +7,7 @@ import {
   getChatInputAvailabilityCopy,
   getChatInputClearTitle,
   getChatInputCountLabel,
+  getChatInputHelperText,
   getChatInputHeight,
   getChatInputSendTitle,
   shouldShowChatInputClear,
@@ -106,6 +107,11 @@ test("getChatInputAvailabilityCopy explains workspace availability", () => {
       placeholder: undefined
     }
   );
+});
+
+test("getChatInputHelperText explains enabled and disabled states", () => {
+  assert.equal(getChatInputHelperText(false), "支持工具调用、记忆检索和多段响应。");
+  assert.equal(getChatInputHelperText(true), "正在接收流式回复，完成后可继续追问。");
 });
 
 test("getChatInputClearTitle explains the clear draft action", () => {
