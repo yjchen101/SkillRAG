@@ -1,5 +1,7 @@
 export type CopyState = "idle" | "copying" | "copied" | "error";
 
+export const COPY_FEEDBACK_RESET_MS = 1600;
+
 export function canCopyMessage(content: string) {
   return content.trim().length > 0;
 }
@@ -18,6 +20,10 @@ export function getCopyMessageLabel(state: CopyState) {
   }
 
   return "复制";
+}
+
+export function shouldResetCopyState(state: CopyState) {
+  return state === "copied" || state === "error";
 }
 
 export async function copyTextToClipboard(text: string) {

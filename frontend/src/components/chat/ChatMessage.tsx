@@ -9,9 +9,11 @@ import { RetrievalCard } from "@/components/chat/RetrievalCard";
 import { ThoughtChain } from "@/components/chat/ThoughtChain";
 import type { RetrievalStep, ToolCall } from "@/lib/api";
 import {
+  COPY_FEEDBACK_RESET_MS,
   canCopyMessage,
   copyTextToClipboard,
   getCopyMessageLabel,
+  shouldResetCopyState,
   type CopyState
 } from "@/lib/messageActions";
 
@@ -60,12 +62,14 @@ export function ChatMessage({
     setCopyState("copying");
     try {
       const copied = await copyTextToClipboard(content);
-      setCopyState(copied ? "copied" : "error");
-      if (copied) {
-        window.setTimeout(() => setCopyState("idle"), 1600);
+      const nextState = copied ? "copied" : "error";
+      setCopyState(nextState);
+      if (shouldResetCopyState(nextState)) {
+        window.setTimeout(() => setCopyState("idle"), COPY_FEEDBACK_RESET_MS);
       }
     } catch (_error) {
       setCopyState("error");
+      window.setTimeout(() => setCopyState("idle"), COPY_FEEDBACK_RESET_MS);
     }
   }
 
