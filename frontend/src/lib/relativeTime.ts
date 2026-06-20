@@ -5,7 +5,7 @@ export function formatRelativeTime(timestamp: number, now = Date.now()): string 
 
   const diffMs = now - timestamp * 1000;
   if (diffMs < 0) {
-    return "刚刚";
+    return "时间未到";
   }
 
   const minute = 60 * 1000;
