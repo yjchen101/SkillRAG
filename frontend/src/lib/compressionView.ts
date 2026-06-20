@@ -54,3 +54,7 @@ export function getCompressionBudgetTargetLabel(targetBudgetTokens: number) {
 export function getCompressionBudgetTitle() {
   return "预算";
 }
+
+export function getCompressionWindowTitle() {
+  return "窗口";
+}

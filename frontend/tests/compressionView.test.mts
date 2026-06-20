@@ -8,6 +8,7 @@ import {
   getCompressionRepairLabel,
   getCompressionReasonLabel,
   getCompressionTimestampLabel,
+  getCompressionWindowTitle,
   getCompressionSavingsLabel
 } from "../src/lib/compressionView.ts";
 
@@ -66,4 +67,8 @@ test("getCompressionBudgetTargetLabel localizes target token budgets", () => {
 
 test("getCompressionBudgetTitle localizes the budget panel heading", () => {
   assert.equal(getCompressionBudgetTitle(), "预算");
+});
+
+test("getCompressionWindowTitle localizes the window panel heading", () => {
+  assert.equal(getCompressionWindowTitle(), "窗口");
 });

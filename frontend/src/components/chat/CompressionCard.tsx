@@ -12,6 +12,7 @@ import {
   getCompressionRepairLabel,
   getCompressionReasonLabel,
   getCompressionTimestampLabel,
+  getCompressionWindowTitle,
   getCompressionSavingsLabel
 } from "@/lib/compressionView";
 
@@ -75,7 +76,7 @@ export function CompressionCard({ events }: { events: CompressionEvent[] }) {
 
               <div className="rounded-2xl bg-[rgba(13,37,48,0.05)] p-3">
                 <div className="mb-1 text-xs uppercase tracking-[0.2em] text-[var(--color-ink-soft)]">
-                  Window
+                  {getCompressionWindowTitle()}
                 </div>
                 <div className="text-sm text-[var(--color-ink)]">
                   compressed {event.compressed_message_count} messages
