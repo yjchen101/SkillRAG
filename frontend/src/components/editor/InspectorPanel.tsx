@@ -1,9 +1,10 @@
 "use client";
 
 import Editor from "@monaco-editor/react";
-import { Save, Search } from "lucide-react";
+import { Save, Search, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
+import { hasActiveFilter } from "@/lib/filterControls";
 import { shouldConfirmInspectorSwitch } from "@/lib/inspectorSwitch";
 import { isSaveShortcut } from "@/lib/keyboardShortcuts";
 import { useAppStore } from "@/lib/store";
@@ -20,6 +21,7 @@ export function InspectorPanel() {
     saveInspector
   } = useAppStore();
   const [fileFilter, setFileFilter] = useState("");
+  const hasFileFilter = hasActiveFilter(fileFilter);
 
   const filteredFiles = useMemo(() => {
     const query = fileFilter.trim().toLowerCase();
@@ -112,6 +114,16 @@ export function InspectorPanel() {
           type="search"
           value={fileFilter}
         />
+        {hasFileFilter && (
+          <button
+            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white/70 text-[var(--color-ink-soft)] transition hover:text-[var(--color-ink)]"
+            onClick={() => setFileFilter("")}
+            title="清空文件搜索"
+            type="button"
+          >
+            <X size={14} />
+          </button>
+        )}
       </label>
 
       <div className="mb-4 flex flex-wrap gap-2">
