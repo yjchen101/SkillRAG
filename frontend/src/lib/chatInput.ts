@@ -20,6 +20,10 @@ export function getChatInputHeight(
 }
 
 export function getChatInputCountLabel(value: string) {
+  if (!value.length) {
+    return "尚未输入";
+  }
+
   return `${value.length} 字`;
 }
 
