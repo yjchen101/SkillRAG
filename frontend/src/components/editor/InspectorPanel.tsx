@@ -2,9 +2,10 @@
 
 import Editor from "@monaco-editor/react";
 import { Save, Search, X } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { hasActiveFilter } from "@/lib/filterControls";
+import { getInspectorSaveLabel, shouldDisableInspectorSave } from "@/lib/inspectorSave";
 import { shouldConfirmInspectorSwitch } from "@/lib/inspectorSwitch";
 import { isSaveShortcut } from "@/lib/keyboardShortcuts";
 import { useAppStore } from "@/lib/store";
@@ -21,7 +22,16 @@ export function InspectorPanel() {
     saveInspector
   } = useAppStore();
   const [fileFilter, setFileFilter] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
   const hasFileFilter = hasActiveFilter(fileFilter);
+  const saveDisabled = shouldDisableInspectorSave({
+    isDirty: inspectorDirty,
+    isSaving
+  });
+  const saveLabel = getInspectorSaveLabel({
+    isDirty: inspectorDirty,
+    isSaving
+  });
 
   const filteredFiles = useMemo(() => {
     const query = fileFilter.trim().toLowerCase();
@@ -48,6 +58,19 @@ export function InspectorPanel() {
     return () => window.removeEventListener("beforeunload", handleBeforeUnload);
   }, [inspectorDirty, inspectorPath]);
 
+  const handleSave = useCallback(async () => {
+    if (saveDisabled) {
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      await saveInspector();
+    } finally {
+      setIsSaving(false);
+    }
+  }, [saveDisabled, saveInspector]);
+
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (!isSaveShortcut(event)) {
@@ -55,14 +78,12 @@ export function InspectorPanel() {
       }
 
       event.preventDefault();
-      if (inspectorDirty) {
-        void saveInspector();
-      }
+      void handleSave();
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [inspectorDirty, saveInspector]);
+  }, [handleSave]);
 
   function openFile(path: string) {
     if (
@@ -96,12 +117,12 @@ export function InspectorPanel() {
         </div>
         <button
           className="flex items-center justify-center gap-2 rounded-full bg-[rgba(15,139,141,0.12)] px-4 py-2 text-sm text-ocean disabled:cursor-not-allowed disabled:text-[var(--color-ink-soft)]"
-          disabled={!inspectorDirty}
-          onClick={() => void saveInspector()}
+          disabled={saveDisabled}
+          onClick={() => void handleSave()}
           type="button"
         >
           <Save size={16} />
-          {inspectorDirty ? "保存修改" : "已同步"}
+          {saveLabel}
         </button>
       </div>
 
