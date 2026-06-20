@@ -42,3 +42,7 @@ export function getFileSearchClearTitle() {
 export function getInspectorCurrentPathTitle(path: string) {
   return `当前文件：${path}`;
 }
+
+export function getInspectorSaveShortcutTitle() {
+  return "按 Cmd 或 Ctrl + S 保存当前文件";
+}

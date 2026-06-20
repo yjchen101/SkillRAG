@@ -9,6 +9,7 @@ import {
   getFileSearchClearTitle,
   getFilePathChipTitle,
   getInspectorCurrentPathTitle,
+  getInspectorSaveShortcutTitle,
   getFileSearchEmptyMessage
 } from "@/lib/fileSearch";
 import { hasActiveFilter } from "@/lib/filterControls";
@@ -203,7 +204,12 @@ export function InspectorPanel() {
           {inspectorPath}
         </span>
         <div className="flex items-center gap-2">
-          <span className="rounded-full bg-white/70 px-2 py-1">Cmd/Ctrl + S 保存</span>
+          <span
+            className="rounded-full bg-white/70 px-2 py-1"
+            title={getInspectorSaveShortcutTitle()}
+          >
+            Cmd/Ctrl + S 保存
+          </span>
           <span
             className={`rounded-full px-2 py-1 ${
               inspectorDirty

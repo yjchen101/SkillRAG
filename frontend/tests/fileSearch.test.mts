@@ -5,6 +5,7 @@ import {
   getFileFilterCountLabel,
   getFilePathChipTitle,
   getInspectorCurrentPathTitle,
+  getInspectorSaveShortcutTitle,
   getFileSearchClearTitle,
   getFileSearchEmptyMessage
 } from "../src/lib/fileSearch.ts";
@@ -55,4 +56,8 @@ test("getInspectorCurrentPathTitle explains the active file", () => {
     getInspectorCurrentPathTitle("memory/MEMORY.md"),
     "当前文件：memory/MEMORY.md"
   );
+});
+
+test("getInspectorSaveShortcutTitle explains the editor save shortcut", () => {
+  assert.equal(getInspectorSaveShortcutTitle(), "按 Cmd 或 Ctrl + S 保存当前文件");
 });
