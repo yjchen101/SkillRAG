@@ -24,6 +24,22 @@ export function getCopyMessageLabel(state: CopyState) {
   return "复制";
 }
 
+export function getCaptureMessageLabel(state: CaptureState) {
+  if (state === "saving") {
+    return "沉淀中";
+  }
+
+  if (state === "saved") {
+    return "已沉淀";
+  }
+
+  if (state === "error") {
+    return "沉淀失败";
+  }
+
+  return "沉淀为知识";
+}
+
 export function getCopyMessageTitle({
   state,
   canCopy

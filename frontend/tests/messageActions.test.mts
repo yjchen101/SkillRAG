@@ -3,6 +3,7 @@ import test from "node:test";
 
 import {
   canCopyMessage,
+  getCaptureMessageLabel,
   getCaptureMessageTitle,
   getCopyMessageLabel,
   getCopyMessageTitle,
@@ -25,6 +26,13 @@ test("getCopyMessageLabel maps copy states to user-facing labels", () => {
   assert.equal(getCopyMessageLabel("copying"), "复制中");
   assert.equal(getCopyMessageLabel("copied"), "已复制");
   assert.equal(getCopyMessageLabel("error"), "复制失败");
+});
+
+test("getCaptureMessageLabel maps capture states to user-facing labels", () => {
+  assert.equal(getCaptureMessageLabel("idle"), "沉淀为知识");
+  assert.equal(getCaptureMessageLabel("saving"), "沉淀中");
+  assert.equal(getCaptureMessageLabel("saved"), "已沉淀");
+  assert.equal(getCaptureMessageLabel("error"), "沉淀失败");
 });
 
 test("getCopyMessageTitle explains copy button state", () => {

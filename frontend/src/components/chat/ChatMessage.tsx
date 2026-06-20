@@ -14,6 +14,7 @@ import {
   type CaptureState,
   canCopyMessage,
   copyTextToClipboard,
+  getCaptureMessageLabel,
   getCaptureMessageTitle,
   getCopyMessageLabel,
   getCopyMessageTitle,
@@ -91,14 +92,7 @@ export function ChatMessage({
         : captureState === "error"
           ? TriangleAlert
           : BookmarkPlus;
-  const captureLabel =
-    captureState === "saving"
-      ? "沉淀中"
-      : captureState === "saved"
-        ? "已沉淀"
-        : captureState === "error"
-          ? "沉淀失败"
-          : "沉淀为知识";
+  const captureLabel = getCaptureMessageLabel(captureState);
   const captureTitle = getCaptureMessageTitle({ state: captureState, canCapture });
   const CopyIcon =
     copyState === "copying"
