@@ -28,3 +28,17 @@ export function getCompressionReasonLabel(reason: string) {
   }
   return reason || "未知原因";
 }
+
+export function getCompressionTimestampLabel(timestamp: number) {
+  if (!timestamp) {
+    return "未知时间";
+  }
+
+  return new Date(timestamp * 1000).toLocaleString("zh-CN", {
+    hour12: false,
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit"
+  });
+}

@@ -8,22 +8,9 @@ import type { CompressionEvent } from "@/lib/api";
 import {
   getCompressionEventCountLabel,
   getCompressionReasonLabel,
+  getCompressionTimestampLabel,
   getCompressionSavingsLabel
 } from "@/lib/compressionView";
-
-function formatTimestamp(timestamp: number) {
-  if (!timestamp) {
-    return "unknown time";
-  }
-
-  return new Date(timestamp * 1000).toLocaleString("zh-CN", {
-    hour12: false,
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit"
-  });
-}
 
 export function CompressionCard({ events }: { events: CompressionEvent[] }) {
   if (!events.length) {
@@ -61,7 +48,7 @@ export function CompressionCard({ events }: { events: CompressionEvent[] }) {
                 </span>
               ) : null}
               <span className="mono text-xs text-[var(--color-ink-soft)]">
-                {formatTimestamp(event.timestamp)}
+                {getCompressionTimestampLabel(event.timestamp)}
               </span>
             </div>
 
