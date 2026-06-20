@@ -62,6 +62,10 @@ test("getInspectorCurrentPathTitle explains the active file", () => {
   );
 });
 
+test("getInspectorCurrentPathTitle falls back when the active path is empty", () => {
+  assert.equal(getInspectorCurrentPathTitle("   "), "当前文件未选择");
+});
+
 test("getInspectorSaveShortcutTitle explains the editor save shortcut", () => {
   assert.equal(getInspectorSaveShortcutTitle(), "按 Cmd 或 Ctrl + S 保存当前文件");
 });

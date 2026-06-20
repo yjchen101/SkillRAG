@@ -41,7 +41,8 @@ export function getFileSearchClearTitle() {
 }
 
 export function getInspectorCurrentPathTitle(path: string) {
-  return `当前文件：${path}`;
+  const trimmedPath = path.trim();
+  return trimmedPath ? `当前文件：${trimmedPath}` : "当前文件未选择";
 }
 
 export function getInspectorSaveShortcutTitle() {
