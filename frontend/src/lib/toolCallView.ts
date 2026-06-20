@@ -33,3 +33,16 @@ export function getToolBlockPreview(value: string, limit = TOOL_BLOCK_PREVIEW_LI
     isTruncated: true
   };
 }
+
+export function formatToolBlockValue(value: string, kind: "input" | "output") {
+  const text = value.trim();
+  if (!text) {
+    return kind === "input" ? "暂无输入" : "等待输出";
+  }
+
+  try {
+    return JSON.stringify(JSON.parse(text), null, 2);
+  } catch {
+    return text;
+  }
+}

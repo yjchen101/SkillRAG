@@ -4,24 +4,23 @@ import { TerminalSquare } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import type { ToolCall } from "@/lib/api";
-import { getToolBlockPreview, summarizeToolCalls } from "@/lib/toolCallView";
+import {
+  formatToolBlockValue,
+  getToolBlockPreview,
+  summarizeToolCalls
+} from "@/lib/toolCallView";
 
-function formatBlock(value: string) {
-  const text = value.trim();
-  if (!text) {
-    return "暂无";
-  }
-
-  try {
-    return JSON.stringify(JSON.parse(text), null, 2);
-  } catch {
-    return text;
-  }
-}
-
-function ToolBlock({ label, value }: { label: string; value: string }) {
+function ToolBlock({
+  kind,
+  label,
+  value
+}: {
+  kind: "input" | "output";
+  label: string;
+  value: string;
+}) {
   const [isExpanded, setIsExpanded] = useState(false);
-  const formattedValue = formatBlock(value);
+  const formattedValue = formatToolBlockValue(value, kind);
   const preview = getToolBlockPreview(formattedValue);
   const displayValue = preview.isTruncated && !isExpanded ? preview.text : formattedValue;
 
@@ -111,8 +110,8 @@ export function ThoughtChain({ toolCalls }: { toolCalls: ToolCall[] }) {
               </div>
 
               <div className="space-y-2 text-xs">
-                <ToolBlock label="输入" value={toolCall.input} />
-                <ToolBlock label="输出" value={toolCall.output} />
+                <ToolBlock kind="input" label="输入" value={toolCall.input} />
+                <ToolBlock kind="output" label="输出" value={toolCall.output} />
               </div>
             </div>
           );

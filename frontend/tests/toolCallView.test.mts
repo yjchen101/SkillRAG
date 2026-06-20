@@ -3,6 +3,7 @@ import test from "node:test";
 
 import {
   TOOL_BLOCK_PREVIEW_LIMIT,
+  formatToolBlockValue,
   getToolBlockPreview,
   summarizeToolCalls
 } from "../src/lib/toolCallView.ts";
@@ -37,4 +38,9 @@ test("getToolBlockPreview truncates long tool content", () => {
     text: `${"x".repeat(TOOL_BLOCK_PREVIEW_LIMIT)}...`,
     isTruncated: true
   });
+});
+
+test("formatToolBlockValue explains empty tool input and output", () => {
+  assert.equal(formatToolBlockValue("", "input"), "暂无输入");
+  assert.equal(formatToolBlockValue("  ", "output"), "等待输出");
 });
