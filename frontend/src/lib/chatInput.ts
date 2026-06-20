@@ -23,6 +23,10 @@ export function getChatInputCountLabel(value: string) {
   return `${value.length} 字`;
 }
 
+export function shouldShowChatInputClear(value: string, disabled: boolean) {
+  return !disabled && value.length > 0;
+}
+
 export function shouldRefocusChatInputAfterSend({
   disabled,
   submittedValue

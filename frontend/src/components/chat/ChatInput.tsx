@@ -1,11 +1,12 @@
 "use client";
 
-import { SendHorizonal } from "lucide-react";
+import { SendHorizonal, X } from "lucide-react";
 import { useLayoutEffect, useRef, useState } from "react";
 
 import {
   getChatInputCountLabel,
   getChatInputHeight,
+  shouldShowChatInputClear,
   shouldRefocusChatInputAfterSend
 } from "@/lib/chatInput";
 
@@ -21,6 +22,7 @@ export function ChatInput({
   const [value, setValue] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const countLabel = getChatInputCountLabel(value);
+  const showClearButton = shouldShowChatInputClear(value, disabled);
 
   useLayoutEffect(() => {
     const textarea = textareaRef.current;
@@ -77,15 +79,30 @@ export function ChatInput({
           </span>
           <span className="rounded-full bg-white/60 px-2 py-0.5 text-xs">{countLabel}</span>
         </div>
-        <button
-          className="flex items-center justify-center gap-2 rounded-full bg-ocean px-4 py-2 text-sm text-white disabled:cursor-not-allowed disabled:bg-[rgba(15,139,141,0.45)] sm:min-w-24"
-          disabled={disabled || !value.trim()}
-          onClick={submit}
-          type="button"
-        >
-          <SendHorizonal size={16} />
-          {disabled ? "生成中" : "发送"}
-        </button>
+        <div className="flex items-center gap-2">
+          {showClearButton && (
+            <button
+              className="flex h-9 w-9 items-center justify-center rounded-full border border-[var(--color-line)] bg-white/60 text-[var(--color-ink-soft)] transition hover:text-[var(--color-ink)]"
+              onClick={() => {
+                setValue("");
+                window.requestAnimationFrame(() => textareaRef.current?.focus());
+              }}
+              title="清空输入"
+              type="button"
+            >
+              <X size={16} />
+            </button>
+          )}
+          <button
+            className="flex items-center justify-center gap-2 rounded-full bg-ocean px-4 py-2 text-sm text-white disabled:cursor-not-allowed disabled:bg-[rgba(15,139,141,0.45)] sm:min-w-24"
+            disabled={disabled || !value.trim()}
+            onClick={submit}
+            type="button"
+          >
+            <SendHorizonal size={16} />
+            {disabled ? "生成中" : "发送"}
+          </button>
+        </div>
       </div>
     </div>
   );
