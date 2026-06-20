@@ -2,6 +2,7 @@
 
 import { Database, FileSearch, Plus, Sparkles, Wrench } from "lucide-react";
 
+import { getKnowledgeIndexView } from "@/lib/knowledgeIndexView";
 import { getSessionActionState } from "@/lib/sessionActions";
 import { useAppStore } from "@/lib/store";
 
@@ -23,18 +24,7 @@ export function Navbar() {
   const currentTitle =
     sessions.find((session) => session.id === currentSessionId)?.title ?? "新会话";
   const isIndexBuilding = Boolean(knowledgeIndexStatus?.building);
-  const needsIndexRebuild = Boolean(knowledgeIndexStatus?.needs_rebuild);
-  const knowledgeIndexLabel = isIndexBuilding ? "索引重建中" : "重建索引";
-  const knowledgeIndexHint = isIndexBuilding
-    ? "知识索引构建中"
-    : needsIndexRebuild
-      ? `${knowledgeIndexStatus?.stale_files ?? 0} 个知识文件待索引`
-    : knowledgeIndexStatus?.ready
-      ? `知识索引已就绪 · ${knowledgeIndexStatus.indexed_files} 个文件`
-      : "知识索引未就绪";
-  const knowledgeIndexHintClass = needsIndexRebuild
-    ? "bg-[rgba(212,106,74,0.14)] text-[var(--color-ember)]"
-    : "bg-[rgba(212,106,74,0.12)] text-[var(--color-ember)]";
+  const knowledgeIndexView = getKnowledgeIndexView(knowledgeIndexStatus);
   const sessionActionState = getSessionActionState({
     isStreaming,
     isInitializing,
@@ -100,7 +90,7 @@ export function Navbar() {
           className={`flex items-center gap-2 rounded-full px-4 py-2 text-sm ${
             isIndexBuilding
               ? "cursor-not-allowed bg-[rgba(15,139,141,0.12)] text-ocean"
-              : needsIndexRebuild
+              : knowledgeIndexStatus?.needs_rebuild
                 ? "border border-[rgba(212,106,74,0.35)] bg-[rgba(212,106,74,0.12)] text-[var(--color-ember)]"
               : "border border-[var(--color-line)] bg-white/60"
           }`}
@@ -109,13 +99,13 @@ export function Navbar() {
           type="button"
         >
           <FileSearch size={16} />
-          {knowledgeIndexLabel}
+          {knowledgeIndexView.label}
         </button>
         <div
-          className={`hidden items-center gap-2 rounded-full px-4 py-2 text-sm md:flex ${knowledgeIndexHintClass}`}
+          className={`hidden items-center gap-2 rounded-full px-4 py-2 text-sm md:flex ${knowledgeIndexView.hintClassName}`}
         >
           <FileSearch size={16} />
-          {knowledgeIndexHint}
+          {knowledgeIndexView.hint}
         </div>
       </div>
     </header>
