@@ -50,3 +50,7 @@ export function getCompressionRepairLabel() {
 export function getCompressionBudgetTargetLabel(targetBudgetTokens: number) {
   return `目标 ${targetBudgetTokens} tokens`;
 }
+
+export function getCompressionBudgetTitle() {
+  return "预算";
+}

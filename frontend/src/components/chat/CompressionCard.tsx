@@ -7,6 +7,7 @@ import remarkGfm from "remark-gfm";
 import type { CompressionEvent } from "@/lib/api";
 import {
   getCompressionBudgetTargetLabel,
+  getCompressionBudgetTitle,
   getCompressionEventCountLabel,
   getCompressionRepairLabel,
   getCompressionReasonLabel,
@@ -58,7 +59,7 @@ export function CompressionCard({ events }: { events: CompressionEvent[] }) {
               <div className="rounded-2xl bg-[rgba(13,37,48,0.05)] p-3">
                 <div className="mb-1 flex items-center gap-2 text-xs uppercase tracking-[0.2em] text-[var(--color-ink-soft)]">
                   <Gauge size={12} />
-                  Budget
+                  {getCompressionBudgetTitle()}
                 </div>
                 <div className="mono text-sm text-[var(--color-ink)]">
                   {event.pre_compress_tokens} → {event.post_compress_tokens}

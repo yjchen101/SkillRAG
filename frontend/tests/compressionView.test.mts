@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import {
+  getCompressionBudgetTitle,
   getCompressionBudgetTargetLabel,
   getCompressionEventCountLabel,
   getCompressionRepairLabel,
@@ -61,4 +62,8 @@ test("getCompressionRepairLabel explains degraded repaired summaries", () => {
 
 test("getCompressionBudgetTargetLabel localizes target token budgets", () => {
   assert.equal(getCompressionBudgetTargetLabel(4096), "目标 4096 tokens");
+});
+
+test("getCompressionBudgetTitle localizes the budget panel heading", () => {
+  assert.equal(getCompressionBudgetTitle(), "预算");
 });
