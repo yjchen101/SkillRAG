@@ -4,6 +4,7 @@ import Editor from "@monaco-editor/react";
 import { Save, Search, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
+import { getFileSearchEmptyMessage } from "@/lib/fileSearch";
 import { hasActiveFilter } from "@/lib/filterControls";
 import { getInspectorSaveLabel, shouldDisableInspectorSave } from "@/lib/inspectorSave";
 import { shouldConfirmInspectorSwitch } from "@/lib/inspectorSwitch";
@@ -164,7 +165,7 @@ export function InspectorPanel() {
         ))}
         {!filteredFiles.length && (
           <div className="w-full rounded-2xl border border-dashed border-[var(--color-line)] bg-white/35 px-3 py-4 text-center text-sm text-[var(--color-ink-soft)]">
-            没有匹配的文件
+            {getFileSearchEmptyMessage(fileFilter)}
           </div>
         )}
       </div>
