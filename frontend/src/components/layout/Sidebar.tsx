@@ -4,6 +4,7 @@ import { Check, MessageSquare, Pencil, Plus, Search, Trash2, X } from "lucide-re
 import { useEffect, useMemo, useState } from "react";
 
 import { formatRelativeTime } from "@/lib/relativeTime";
+import { getSessionActionState } from "@/lib/sessionActions";
 import { useAppStore } from "@/lib/store";
 
 function preview(text: string) {
@@ -18,7 +19,10 @@ export function Sidebar() {
     createNewSession,
     removeSession,
     renameCurrentSession,
-    messages
+    messages,
+    isStreaming,
+    isInitializing,
+    workspaceError
   } = useAppStore();
   const [editingSessionId, setEditingSessionId] = useState<string | null>(null);
   const [draftTitle, setDraftTitle] = useState("");
@@ -32,6 +36,11 @@ export function Sidebar() {
 
     return sessions.filter((session) => session.title.toLowerCase().includes(query));
   }, [sessionFilter, sessions]);
+  const sessionActionState = getSessionActionState({
+    isStreaming,
+    isInitializing,
+    workspaceError
+  });
 
   useEffect(() => {
     if (!editingSessionId) {
@@ -46,6 +55,10 @@ export function Sidebar() {
   }, [editingSessionId, sessions]);
 
   function startRename(sessionId: string, title: string) {
+    if (sessionActionState.disabled) {
+      return;
+    }
+
     setEditingSessionId(sessionId);
     setDraftTitle(title);
   }
@@ -56,7 +69,7 @@ export function Sidebar() {
   }
 
   async function submitRename() {
-    if (!editingSessionId) {
+    if (!editingSessionId || sessionActionState.disabled) {
       return;
     }
 
@@ -72,6 +85,10 @@ export function Sidebar() {
   }
 
   function confirmRemove(sessionId: string, title: string) {
+    if (sessionActionState.disabled) {
+      return;
+    }
+
     const confirmed = window.confirm(`删除会话「${title}」？此操作不可撤销。`);
     if (!confirmed) {
       return;
@@ -90,7 +107,8 @@ export function Sidebar() {
           <h2 className="text-lg font-semibold tracking-[-0.04em]">会话与原始消息</h2>
         </div>
         <button
-          className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[rgba(15,139,141,0.12)] text-ocean"
+          className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[rgba(15,139,141,0.12)] text-ocean disabled:cursor-not-allowed disabled:text-[var(--color-ink-soft)]"
+          disabled={sessionActionState.disabled}
           onClick={() => void createNewSession()}
           type="button"
         >
@@ -108,6 +126,11 @@ export function Sidebar() {
           value={sessionFilter}
         />
       </label>
+      {sessionActionState.reason && (
+        <div className="mb-3 rounded-2xl border border-[rgba(212,106,74,0.22)] bg-[rgba(212,106,74,0.1)] px-3 py-2 text-sm text-[var(--color-ember)]">
+          {sessionActionState.reason}
+        </div>
+      )}
 
       <div className="space-y-2 overflow-y-auto pr-1">
         {filteredSessions.map((session) => (
@@ -159,7 +182,8 @@ export function Sidebar() {
             ) : (
               <>
                 <button
-                  className="w-full text-left"
+                  className="w-full text-left disabled:cursor-not-allowed disabled:opacity-60"
+                  disabled={sessionActionState.disabled}
                   onClick={() => void selectSession(session.id)}
                   type="button"
                 >
@@ -178,7 +202,8 @@ export function Sidebar() {
                 </button>
                 <div className="mt-3 flex items-center gap-4 text-xs">
                   <button
-                    className="flex items-center gap-2 text-[var(--color-ink-soft)]"
+                    className="flex items-center gap-2 text-[var(--color-ink-soft)] disabled:cursor-not-allowed disabled:opacity-50"
+                    disabled={sessionActionState.disabled}
                     onClick={() => startRename(session.id, session.title)}
                     type="button"
                   >
@@ -186,7 +211,8 @@ export function Sidebar() {
                     重命名
                   </button>
                   <button
-                    className="flex items-center gap-2 text-[var(--color-ember)]"
+                    className="flex items-center gap-2 text-[var(--color-ember)] disabled:cursor-not-allowed disabled:opacity-50"
+                    disabled={sessionActionState.disabled}
                     onClick={() => confirmRemove(session.id, session.title)}
                     type="button"
                   >

@@ -40,6 +40,7 @@ import {
   type AppNotification,
   type NotificationTone
 } from "@/lib/notifications";
+import { getSessionActionState } from "@/lib/sessionActions";
 
 type Message = {
   id: string;
@@ -288,6 +289,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, [notify, refreshSessionDetails]);
 
   async function createNewSession() {
+    const actionState = getSessionActionState({
+      isStreaming,
+      isInitializing,
+      workspaceError
+    });
+    if (actionState.disabled) {
+      notify("暂时不能创建会话", "error", actionState.reason ?? undefined);
+      return;
+    }
+
     try {
       const created = await createSession();
       await refreshSessions();
@@ -302,6 +313,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }
 
   async function selectSession(sessionId: string) {
+    const actionState = getSessionActionState({
+      isStreaming,
+      isInitializing,
+      workspaceError
+    });
+    if (actionState.disabled) {
+      notify("暂时不能切换会话", "error", actionState.reason ?? undefined);
+      return;
+    }
+
     try {
       setCurrentSessionId(sessionId);
       await refreshSessionDetails(sessionId);
@@ -500,6 +521,18 @@ export function AppProvider({ children }: { children: ReactNode }) {
     if (!currentSessionId || !title.trim()) {
       return;
     }
+    const actionState = getSessionActionState({
+      isStreaming,
+      isInitializing,
+      workspaceError,
+      currentSessionId,
+      requiresSession: true
+    });
+    if (actionState.disabled) {
+      notify("暂时不能重命名会话", "error", actionState.reason ?? undefined);
+      return;
+    }
+
     try {
       await renameSession(currentSessionId, title.trim());
       await refreshSessions();
@@ -510,6 +543,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }
 
   async function removeSession(sessionId: string) {
+    const actionState = getSessionActionState({
+      isStreaming,
+      isInitializing,
+      workspaceError
+    });
+    if (actionState.disabled) {
+      notify("暂时不能删除会话", "error", actionState.reason ?? undefined);
+      return;
+    }
+
     try {
       await deleteSession(sessionId);
       await refreshSessions();
@@ -563,12 +606,21 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }
 
   async function compressCurrentSession() {
-    if (!currentSessionId) {
+    const activeSessionId = currentSessionId;
+    const actionState = getSessionActionState({
+      isStreaming,
+      isInitializing,
+      workspaceError,
+      currentSessionId: activeSessionId,
+      requiresSession: true
+    });
+    if (actionState.disabled || !activeSessionId) {
+      notify("暂时不能压缩会话", "error", actionState.reason ?? undefined);
       return;
     }
     try {
-      await compressSession(currentSessionId);
-      await refreshSessionDetails(currentSessionId);
+      await compressSession(activeSessionId);
+      await refreshSessionDetails(activeSessionId);
       await refreshSessions();
       notify("会话上下文已压缩", "success");
     } catch (error) {

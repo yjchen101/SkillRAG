@@ -2,6 +2,7 @@
 
 import { Database, FileSearch, Plus, Sparkles, Wrench } from "lucide-react";
 
+import { getSessionActionState } from "@/lib/sessionActions";
 import { useAppStore } from "@/lib/store";
 
 export function Navbar() {
@@ -13,7 +14,10 @@ export function Navbar() {
     rebuildKnowledgeIndex,
     knowledgeIndexStatus,
     sessions,
-    currentSessionId
+    currentSessionId,
+    isStreaming,
+    isInitializing,
+    workspaceError
   } = useAppStore();
 
   const currentTitle =
@@ -31,6 +35,18 @@ export function Navbar() {
   const knowledgeIndexHintClass = needsIndexRebuild
     ? "bg-[rgba(212,106,74,0.14)] text-[var(--color-ember)]"
     : "bg-[rgba(212,106,74,0.12)] text-[var(--color-ember)]";
+  const sessionActionState = getSessionActionState({
+    isStreaming,
+    isInitializing,
+    workspaceError
+  });
+  const compressionActionState = getSessionActionState({
+    isStreaming,
+    isInitializing,
+    workspaceError,
+    currentSessionId,
+    requiresSession: true
+  });
 
   return (
     <header className="panel flex flex-col gap-4 rounded-[30px] px-5 py-4 lg:flex-row lg:items-center lg:justify-between">
@@ -50,7 +66,8 @@ export function Navbar() {
 
       <div className="flex flex-wrap items-center gap-3 lg:justify-end">
         <button
-          className="flex items-center gap-2 rounded-full border border-[var(--color-line)] bg-white/60 px-4 py-2 text-sm"
+          className="flex items-center gap-2 rounded-full border border-[var(--color-line)] bg-white/60 px-4 py-2 text-sm disabled:cursor-not-allowed disabled:text-[var(--color-ink-soft)]"
+          disabled={sessionActionState.disabled}
           onClick={() => void createNewSession()}
           type="button"
         >
@@ -71,9 +88,10 @@ export function Navbar() {
         </button>
         <button
           className="flex items-center gap-2 rounded-full border border-[var(--color-line)] bg-white/60 px-4 py-2 text-sm disabled:cursor-not-allowed disabled:text-[var(--color-ink-soft)]"
-          disabled={!currentSessionId}
+          disabled={compressionActionState.disabled}
           onClick={() => void compressCurrentSession()}
           type="button"
+          title={compressionActionState.reason ?? undefined}
         >
           <Wrench size={16} />
           压缩
