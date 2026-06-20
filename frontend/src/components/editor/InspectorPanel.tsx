@@ -18,7 +18,10 @@ import {
   getInspectorSaveTitle,
   shouldDisableInspectorSave
 } from "@/lib/inspectorSave";
-import { shouldConfirmInspectorSwitch } from "@/lib/inspectorSwitch";
+import {
+  getInspectorSwitchConfirmMessage,
+  shouldConfirmInspectorSwitch
+} from "@/lib/inspectorSwitch";
 import { isSaveShortcut } from "@/lib/keyboardShortcuts";
 import { useAppStore } from "@/lib/store";
 import { getBeforeUnloadMessage, shouldWarnBeforeUnload } from "@/lib/unsavedChanges";
@@ -116,7 +119,10 @@ export function InspectorPanel() {
       })
     ) {
       const confirmed = window.confirm(
-        `当前文件「${inspectorPath}」还有未保存修改。切换到「${path}」会丢弃这些修改，确定继续？`
+        getInspectorSwitchConfirmMessage({
+          currentPath: inspectorPath,
+          nextPath: path
+        })
       );
       if (!confirmed) {
         return;
