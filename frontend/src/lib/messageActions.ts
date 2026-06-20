@@ -1,6 +1,8 @@
 export type CopyState = "idle" | "copying" | "copied" | "error";
+export type CaptureState = "idle" | "saving" | "saved" | "error";
 
 export const COPY_FEEDBACK_RESET_MS = 1600;
+export const CAPTURE_ERROR_RESET_MS = 2200;
 
 export function canCopyMessage(content: string) {
   return content.trim().length > 0;
@@ -24,6 +26,10 @@ export function getCopyMessageLabel(state: CopyState) {
 
 export function shouldResetCopyState(state: CopyState) {
   return state === "copied" || state === "error";
+}
+
+export function shouldResetCaptureState(state: CaptureState) {
+  return state === "error";
 }
 
 export async function copyTextToClipboard(text: string) {

@@ -4,6 +4,7 @@ import test from "node:test";
 import {
   canCopyMessage,
   getCopyMessageLabel,
+  shouldResetCaptureState,
   shouldResetCopyState
 } from "../src/lib/messageActions.ts";
 
@@ -29,4 +30,11 @@ test("shouldResetCopyState resets only terminal feedback states", () => {
   assert.equal(shouldResetCopyState("copying"), false);
   assert.equal(shouldResetCopyState("copied"), true);
   assert.equal(shouldResetCopyState("error"), true);
+});
+
+test("shouldResetCaptureState resets failed capture feedback only", () => {
+  assert.equal(shouldResetCaptureState("idle"), false);
+  assert.equal(shouldResetCaptureState("saving"), false);
+  assert.equal(shouldResetCaptureState("saved"), false);
+  assert.equal(shouldResetCaptureState("error"), true);
 });

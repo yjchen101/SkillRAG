@@ -9,10 +9,13 @@ import { RetrievalCard } from "@/components/chat/RetrievalCard";
 import { ThoughtChain } from "@/components/chat/ThoughtChain";
 import type { RetrievalStep, ToolCall } from "@/lib/api";
 import {
+  CAPTURE_ERROR_RESET_MS,
   COPY_FEEDBACK_RESET_MS,
+  type CaptureState,
   canCopyMessage,
   copyTextToClipboard,
   getCopyMessageLabel,
+  shouldResetCaptureState,
   shouldResetCopyState,
   type CopyState
 } from "@/lib/messageActions";
@@ -35,7 +38,7 @@ export function ChatMessage({
   onCapture: (messageId: string) => Promise<{ path: string; title: string } | null>;
 }) {
   const isUser = role === "user";
-  const [captureState, setCaptureState] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const [captureState, setCaptureState] = useState<CaptureState>("idle");
   const [copyState, setCopyState] = useState<CopyState>("idle");
   const canCapture = !isUser && content.trim().length > 0 && typeof sessionIndex === "number";
   const canCopy = canCopyMessage(content);
@@ -48,9 +51,14 @@ export function ChatMessage({
     setCaptureState("saving");
     try {
       const result = await onCapture(id);
-      setCaptureState(result ? "saved" : "error");
+      const nextState = result ? "saved" : "error";
+      setCaptureState(nextState);
+      if (shouldResetCaptureState(nextState)) {
+        window.setTimeout(() => setCaptureState("idle"), CAPTURE_ERROR_RESET_MS);
+      }
     } catch (_error) {
       setCaptureState("error");
+      window.setTimeout(() => setCaptureState("idle"), CAPTURE_ERROR_RESET_MS);
     }
   }
 
