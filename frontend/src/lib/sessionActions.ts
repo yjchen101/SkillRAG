@@ -49,3 +49,13 @@ export function getSessionActionState({
     reason: null
   };
 }
+
+export function getSessionActionButtonTitle({
+  actionLabel,
+  state
+}: {
+  actionLabel: string;
+  state: SessionActionState;
+}) {
+  return state.disabled && state.reason ? state.reason : actionLabel;
+}

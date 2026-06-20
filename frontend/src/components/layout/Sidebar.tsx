@@ -6,7 +6,10 @@ import { useEffect, useMemo, useState } from "react";
 import { hasActiveFilter } from "@/lib/filterControls";
 import { getMessagePreview, getRawMessageIndexLabel } from "@/lib/messagePreview";
 import { formatRelativeTime } from "@/lib/relativeTime";
-import { getSessionActionState } from "@/lib/sessionActions";
+import {
+  getSessionActionButtonTitle,
+  getSessionActionState
+} from "@/lib/sessionActions";
 import { shouldDisableSessionRenameSave, shouldSubmitSessionRename } from "@/lib/sessionRename";
 import {
   getSessionFilterCountLabel,
@@ -131,6 +134,10 @@ export function Sidebar() {
           className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[rgba(15,139,141,0.12)] text-ocean disabled:cursor-not-allowed disabled:text-[var(--color-ink-soft)]"
           disabled={sessionActionState.disabled}
           onClick={() => void createNewSession()}
+          title={getSessionActionButtonTitle({
+            actionLabel: "新建会话",
+            state: sessionActionState
+          })}
           type="button"
         >
           <Plus size={18} />
@@ -223,6 +230,10 @@ export function Sidebar() {
                   className="w-full text-left disabled:cursor-not-allowed disabled:opacity-60"
                   disabled={sessionActionState.disabled}
                   onClick={() => void selectSession(session.id)}
+                  title={getSessionActionButtonTitle({
+                    actionLabel: `打开会话：${session.title}`,
+                    state: sessionActionState
+                  })}
                   type="button"
                 >
                   <div className="flex items-start justify-between gap-3">
@@ -243,6 +254,10 @@ export function Sidebar() {
                     className="flex items-center gap-2 text-[var(--color-ink-soft)] disabled:cursor-not-allowed disabled:opacity-50"
                     disabled={sessionActionState.disabled}
                     onClick={() => startRename(session.id, session.title)}
+                    title={getSessionActionButtonTitle({
+                      actionLabel: `重命名会话：${session.title}`,
+                      state: sessionActionState
+                    })}
                     type="button"
                   >
                     <Pencil size={14} />
@@ -252,6 +267,10 @@ export function Sidebar() {
                     className="flex items-center gap-2 text-[var(--color-ember)] disabled:cursor-not-allowed disabled:opacity-50"
                     disabled={sessionActionState.disabled}
                     onClick={() => confirmRemove(session.id, session.title)}
+                    title={getSessionActionButtonTitle({
+                      actionLabel: `删除会话：${session.title}`,
+                      state: sessionActionState
+                    })}
                     type="button"
                   >
                     <Trash2 size={14} />

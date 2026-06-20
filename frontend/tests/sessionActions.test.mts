@@ -1,7 +1,10 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { getSessionActionState } from "../src/lib/sessionActions.ts";
+import {
+  getSessionActionButtonTitle,
+  getSessionActionState
+} from "../src/lib/sessionActions.ts";
 
 test("getSessionActionState disables actions while a response is streaming", () => {
   assert.deepEqual(
@@ -74,5 +77,22 @@ test("getSessionActionState allows actions when the workspace is ready", () => {
       disabled: false,
       reason: null
     }
+  );
+});
+
+test("getSessionActionButtonTitle explains disabled and enabled actions", () => {
+  assert.equal(
+    getSessionActionButtonTitle({
+      actionLabel: "新建会话",
+      state: { disabled: false, reason: null }
+    }),
+    "新建会话"
+  );
+  assert.equal(
+    getSessionActionButtonTitle({
+      actionLabel: "删除会话",
+      state: { disabled: true, reason: "正在生成回复，完成后再操作会话" }
+    }),
+    "正在生成回复，完成后再操作会话"
   );
 });
