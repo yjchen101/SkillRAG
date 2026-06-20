@@ -7,6 +7,7 @@ import { hasActiveFilter } from "@/lib/filterControls";
 import { getMessagePreview } from "@/lib/messagePreview";
 import { formatRelativeTime } from "@/lib/relativeTime";
 import { getSessionActionState } from "@/lib/sessionActions";
+import { shouldSubmitSessionRename } from "@/lib/sessionRename";
 import { getSessionSearchEmptyMessage } from "@/lib/sessionSearch";
 import { useAppStore } from "@/lib/store";
 
@@ -75,6 +76,18 @@ export function Sidebar() {
 
     const title = draftTitle.trim();
     if (!title) {
+      cancelRename();
+      return;
+    }
+
+    const current = sessions.find((session) => session.id === editingSessionId);
+    if (
+      current &&
+      !shouldSubmitSessionRename({
+        currentTitle: current.title,
+        draftTitle
+      })
+    ) {
       cancelRename();
       return;
     }
