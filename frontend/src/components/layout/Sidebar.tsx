@@ -288,7 +288,10 @@ export function Sidebar() {
         ))}
         {!filteredSessions.length && (
           <div className="rounded-3xl border border-dashed border-[var(--color-line)] bg-white/35 px-4 py-6 text-center text-sm text-[var(--color-ink-soft)]">
-            {getSessionSearchEmptyMessage(sessionFilter)}
+            {getSessionSearchEmptyMessage({
+              query: sessionFilter,
+              totalCount: sessions.length
+            })}
           </div>
         )}
       </div>

@@ -1,6 +1,16 @@
-export function getSessionSearchEmptyMessage(query: string) {
+export function getSessionSearchEmptyMessage({
+  query,
+  totalCount
+}: {
+  query: string;
+  totalCount: number;
+}) {
   const trimmedQuery = query.trim();
-  return trimmedQuery ? `没有匹配「${trimmedQuery}」的会话` : "没有匹配的会话";
+  if (trimmedQuery) {
+    return `没有匹配「${trimmedQuery}」的会话`;
+  }
+
+  return totalCount === 0 ? "还没有会话，先新建一个" : "没有匹配的会话";
 }
 
 export function getSessionFilterCountLabel({
