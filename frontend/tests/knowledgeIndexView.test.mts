@@ -26,7 +26,7 @@ test("getKnowledgeIndexView shows a neutral building state", () => {
   const view = getKnowledgeIndexView(makeStatus({ building: true, vector_ready: true }));
 
   assert.equal(view.label, "索引重建中");
-  assert.equal(view.hint, "知识索引构建中 · 仅 Vector 就绪");
+  assert.equal(view.hint, "知识索引构建中 · 仅向量检索就绪");
   assert.equal(view.title, "知识索引正在构建，请稍候");
   assert.match(view.hintClassName, /text-ocean/);
 });
@@ -37,7 +37,7 @@ test("getKnowledgeIndexView warns when files need indexing", () => {
   );
 
   assert.equal(view.label, "重建索引");
-  assert.equal(view.hint, "3 个知识文件待索引 · 仅 BM25 就绪");
+  assert.equal(view.hint, "3 个知识文件待索引 · 仅 BM25 关键词检索就绪");
   assert.match(view.hintClassName, /color-ember/);
 });
 
@@ -47,7 +47,7 @@ test("getKnowledgeIndexView shows ready indexes as healthy", () => {
   );
 
   assert.equal(view.label, "重建索引");
-  assert.equal(view.hint, "知识索引已就绪 · 12 个文件 · Vector/BM25 已就绪");
+  assert.equal(view.hint, "知识索引已就绪 · 12 个文件 · 向量检索/BM25 关键词检索已就绪");
   assert.equal(view.title, "重建知识索引");
   assert.match(view.hintClassName, /text-ocean/);
 });
@@ -56,16 +56,19 @@ test("getKnowledgeIndexView warns when status is unavailable", () => {
   const view = getKnowledgeIndexView(null);
 
   assert.equal(view.label, "重建索引");
-  assert.equal(view.hint, "知识索引未就绪 · Vector/BM25 未就绪");
+  assert.equal(view.hint, "知识索引未就绪 · 向量检索/BM25 关键词检索未就绪");
   assert.match(view.hintClassName, /color-ember/);
 });
 
 test("getKnowledgeBackendLabel summarizes backend readiness", () => {
-  assert.equal(getKnowledgeBackendLabel(null), "Vector/BM25 未就绪");
-  assert.equal(getKnowledgeBackendLabel(makeStatus({ vector_ready: true })), "仅 Vector 就绪");
-  assert.equal(getKnowledgeBackendLabel(makeStatus({ bm25_ready: true })), "仅 BM25 就绪");
+  assert.equal(getKnowledgeBackendLabel(null), "向量检索/BM25 关键词检索未就绪");
+  assert.equal(getKnowledgeBackendLabel(makeStatus({ vector_ready: true })), "仅向量检索就绪");
+  assert.equal(
+    getKnowledgeBackendLabel(makeStatus({ bm25_ready: true })),
+    "仅 BM25 关键词检索就绪"
+  );
   assert.equal(
     getKnowledgeBackendLabel(makeStatus({ vector_ready: true, bm25_ready: true })),
-    "Vector/BM25 已就绪"
+    "向量检索/BM25 关键词检索已就绪"
   );
 });

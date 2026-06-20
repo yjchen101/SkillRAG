@@ -12,22 +12,22 @@ const WARNING_HINT_CLASS = "bg-[rgba(212,106,74,0.14)] text-[var(--color-ember)]
 
 export function getKnowledgeBackendLabel(status: KnowledgeIndexStatus | null) {
   if (!status) {
-    return "Vector/BM25 未就绪";
+    return "向量检索/BM25 关键词检索未就绪";
   }
 
   if (status.vector_ready && status.bm25_ready) {
-    return "Vector/BM25 已就绪";
+    return "向量检索/BM25 关键词检索已就绪";
   }
 
   if (status.vector_ready) {
-    return "仅 Vector 就绪";
+    return "仅向量检索就绪";
   }
 
   if (status.bm25_ready) {
-    return "仅 BM25 就绪";
+    return "仅 BM25 关键词检索就绪";
   }
 
-  return "Vector/BM25 未就绪";
+  return "向量检索/BM25 关键词检索未就绪";
 }
 
 export function getKnowledgeIndexView(
