@@ -16,7 +16,11 @@ import {
   getSessionActionButtonTitle,
   getSessionActionState
 } from "@/lib/sessionActions";
-import { shouldDisableSessionRenameSave, shouldSubmitSessionRename } from "@/lib/sessionRename";
+import {
+  getSessionRenameSaveTitle,
+  shouldDisableSessionRenameSave,
+  shouldSubmitSessionRename
+} from "@/lib/sessionRename";
 import {
   getSessionFilterCountLabel,
   getSessionSearchClearTitle,
@@ -216,6 +220,10 @@ export function Sidebar() {
                       draftTitle
                     })}
                     onClick={() => void submitRename()}
+                    title={getSessionRenameSaveTitle({
+                      currentTitle: session.title,
+                      draftTitle
+                    })}
                     type="button"
                   >
                     <Check size={14} />

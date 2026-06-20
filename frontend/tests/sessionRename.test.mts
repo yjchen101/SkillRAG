@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import {
+  getSessionRenameSaveTitle,
   shouldDisableSessionRenameSave,
   shouldSubmitSessionRename
 } from "../src/lib/sessionRename.ts";
@@ -46,5 +47,24 @@ test("shouldDisableSessionRenameSave enables changed titles", () => {
   assert.equal(
     shouldDisableSessionRenameSave({ currentTitle: "现有标题", draftTitle: "新标题" }),
     false
+  );
+});
+
+test("getSessionRenameSaveTitle explains save availability", () => {
+  assert.equal(
+    getSessionRenameSaveTitle({ currentTitle: null, draftTitle: "新标题" }),
+    "请选择一个会话后再重命名"
+  );
+  assert.equal(
+    getSessionRenameSaveTitle({ currentTitle: "现有标题", draftTitle: "   " }),
+    "输入新的会话标题后保存"
+  );
+  assert.equal(
+    getSessionRenameSaveTitle({ currentTitle: "现有标题", draftTitle: "现有标题" }),
+    "标题没有变化"
+  );
+  assert.equal(
+    getSessionRenameSaveTitle({ currentTitle: "现有标题", draftTitle: "新标题" }),
+    "保存新的会话标题"
   );
 });
