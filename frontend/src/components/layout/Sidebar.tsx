@@ -7,7 +7,7 @@ import { hasActiveFilter } from "@/lib/filterControls";
 import { getMessagePreview } from "@/lib/messagePreview";
 import { formatRelativeTime } from "@/lib/relativeTime";
 import { getSessionActionState } from "@/lib/sessionActions";
-import { shouldSubmitSessionRename } from "@/lib/sessionRename";
+import { shouldDisableSessionRenameSave, shouldSubmitSessionRename } from "@/lib/sessionRename";
 import { getSessionSearchEmptyMessage } from "@/lib/sessionSearch";
 import { useAppStore } from "@/lib/store";
 
@@ -185,7 +185,11 @@ export function Sidebar() {
                 />
                 <div className="flex items-center gap-2 text-xs">
                   <button
-                    className="flex items-center gap-1 rounded-full bg-ocean px-3 py-1.5 text-white"
+                    className="flex items-center gap-1 rounded-full bg-ocean px-3 py-1.5 text-white disabled:cursor-not-allowed disabled:bg-[rgba(15,139,141,0.42)]"
+                    disabled={shouldDisableSessionRenameSave({
+                      currentTitle: session.title,
+                      draftTitle
+                    })}
                     onClick={() => void submitRename()}
                     type="button"
                   >
