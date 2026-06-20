@@ -33,9 +33,10 @@ test("getChatInputHeight caps tall content and enables scrolling", () => {
   });
 });
 
-test("getChatInputCountLabel reports raw input length", () => {
+test("getChatInputCountLabel reports visible input length", () => {
   assert.equal(getChatInputCountLabel(""), "尚未输入");
-  assert.equal(getChatInputCountLabel("hello"), "5 字");
+  assert.equal(getChatInputCountLabel("   "), "尚未输入");
+  assert.equal(getChatInputCountLabel("  hello  "), "5 字");
 });
 
 test("shouldShowChatInputClear appears only for editable drafts", () => {

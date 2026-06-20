@@ -20,11 +20,12 @@ export function getChatInputHeight(
 }
 
 export function getChatInputCountLabel(value: string) {
-  if (!value.length) {
+  const visibleValue = value.trim();
+  if (!visibleValue.length) {
     return "尚未输入";
   }
 
-  return `${value.length} 字`;
+  return `${visibleValue.length} 字`;
 }
 
 export function getChatInputSendTitle({
