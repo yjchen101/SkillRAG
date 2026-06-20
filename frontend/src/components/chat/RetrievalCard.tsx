@@ -4,7 +4,7 @@ import { Database, FileSearch, Layers3, Search, Sparkles, type LucideIcon } from
 import { useState } from "react";
 
 import type { RetrievalStep } from "@/lib/api";
-import { summarizeRetrievalSteps } from "@/lib/retrievalView";
+import { getEvidenceChannelLabel, summarizeRetrievalSteps } from "@/lib/retrievalView";
 
 const STEP_META: Record<
   string,
@@ -149,8 +149,15 @@ export function RetrievalCard({ steps }: { steps: RetrievalStep[] }) {
                       key={`${item.channel}-${item.source_path}-${item.locator}-${resultIndex}`}
                     >
                       <div className="mb-1 flex items-center justify-between gap-3 text-xs text-[var(--color-ink-soft)]">
-                        <span className="truncate">{item.source_path}</span>
-                        {typeof item.score === "number" ? <span>{item.score.toFixed(3)}</span> : null}
+                        <div className="flex min-w-0 items-center gap-2">
+                          <span className="shrink-0 rounded-full bg-[rgba(13,37,48,0.08)] px-2 py-0.5 text-[11px] text-[var(--color-ink)]">
+                            {getEvidenceChannelLabel(item.channel)}
+                          </span>
+                          <span className="truncate">{item.source_path}</span>
+                        </div>
+                        {typeof item.score === "number" ? (
+                          <span className="shrink-0">{item.score.toFixed(3)}</span>
+                        ) : null}
                       </div>
                       {item.locator ? (
                         <div className="mb-2 text-xs text-[var(--color-ink-soft)]">{item.locator}</div>

@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { summarizeRetrievalSteps } from "../src/lib/retrievalView.ts";
+import { getEvidenceChannelLabel, summarizeRetrievalSteps } from "../src/lib/retrievalView.ts";
 
 test("summarizeRetrievalSteps counts stages and evidence", () => {
   const summary = summarizeRetrievalSteps([
@@ -104,4 +104,13 @@ test("summarizeRetrievalSteps counts steps without evidence", () => {
 
   assert.equal(summary.emptySteps, 1);
   assert.equal(summary.totalResults, 1);
+});
+
+test("getEvidenceChannelLabel maps evidence channels to Chinese labels", () => {
+  assert.equal(getEvidenceChannelLabel("memory"), "Memory");
+  assert.equal(getEvidenceChannelLabel("skill"), "Skill");
+  assert.equal(getEvidenceChannelLabel("vector"), "向量");
+  assert.equal(getEvidenceChannelLabel("bm25"), "BM25");
+  assert.equal(getEvidenceChannelLabel("fused"), "融合");
+  assert.equal(getEvidenceChannelLabel("unknown"), "证据");
 });

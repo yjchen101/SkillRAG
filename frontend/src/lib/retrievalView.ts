@@ -1,5 +1,13 @@
 import type { RetrievalStep } from "@/lib/api";
 
+const EVIDENCE_CHANNEL_LABELS: Record<string, string> = {
+  memory: "Memory",
+  skill: "Skill",
+  vector: "向量",
+  bm25: "BM25",
+  fused: "融合"
+};
+
 export type RetrievalSummary = {
   totalSteps: number;
   totalResults: number;
@@ -8,6 +16,10 @@ export type RetrievalSummary = {
   stageCounts: Array<[string, number]>;
   usedFallback: boolean;
 };
+
+export function getEvidenceChannelLabel(channel: string) {
+  return EVIDENCE_CHANNEL_LABELS[channel] ?? "证据";
+}
 
 export function summarizeRetrievalSteps(steps: RetrievalStep[]): RetrievalSummary {
   const stageCounts = new Map<string, number>();
