@@ -28,3 +28,7 @@ export function getRawMessageIndexLabel({
   const label = `#${index + 1}`;
   return index === total - 1 ? `${label} 最新` : label;
 }
+
+export function getRawMessageToolLabel(toolCount: number) {
+  return toolCount > 0 ? `${toolCount} 个工具` : "无工具";
+}

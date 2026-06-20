@@ -4,7 +4,11 @@ import { Check, MessageSquare, Pencil, Plus, Search, Trash2, X } from "lucide-re
 import { useEffect, useMemo, useState } from "react";
 
 import { hasActiveFilter } from "@/lib/filterControls";
-import { getMessagePreview, getRawMessageIndexLabel } from "@/lib/messagePreview";
+import {
+  getMessagePreview,
+  getRawMessageIndexLabel,
+  getRawMessageToolLabel
+} from "@/lib/messagePreview";
 import { formatRelativeTime } from "@/lib/relativeTime";
 import {
   getSessionActionButtonTitle,
@@ -302,7 +306,7 @@ export function Sidebar() {
                 <span>
                   {getRawMessageIndexLabel({ index, total: messages.length })} · {message.role}
                 </span>
-                <span>{message.toolCalls.length} tools</span>
+                <span>{getRawMessageToolLabel(message.toolCalls.length)}</span>
               </div>
               <p className="break-words text-sm text-[var(--color-ink-soft)]">
                 {getMessagePreview({
