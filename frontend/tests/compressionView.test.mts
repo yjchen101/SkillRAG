@@ -3,6 +3,7 @@ import test from "node:test";
 
 import {
   getCompressionEventCountLabel,
+  getCompressionReasonLabel,
   getCompressionSavingsLabel
 } from "../src/lib/compressionView.ts";
 
@@ -39,4 +40,10 @@ test("getCompressionSavingsLabel handles missing token baselines", () => {
 test("getCompressionEventCountLabel summarizes visible compression history", () => {
   assert.equal(getCompressionEventCountLabel(1), "最近 1 次压缩");
   assert.equal(getCompressionEventCountLabel(3), "最近 3 次压缩");
+});
+
+test("getCompressionReasonLabel localizes known and empty reasons", () => {
+  assert.equal(getCompressionReasonLabel("prompt_tokens_exceeded"), "自动触发");
+  assert.equal(getCompressionReasonLabel("manual_request"), "手动触发");
+  assert.equal(getCompressionReasonLabel(""), "未知原因");
 });

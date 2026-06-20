@@ -7,6 +7,7 @@ import remarkGfm from "remark-gfm";
 import type { CompressionEvent } from "@/lib/api";
 import {
   getCompressionEventCountLabel,
+  getCompressionReasonLabel,
   getCompressionSavingsLabel
 } from "@/lib/compressionView";
 
@@ -22,16 +23,6 @@ function formatTimestamp(timestamp: number) {
     hour: "2-digit",
     minute: "2-digit"
   });
-}
-
-function formatReason(reason: string) {
-  if (reason === "prompt_tokens_exceeded") {
-    return "自动触发";
-  }
-  if (reason === "manual_request") {
-    return "手动触发";
-  }
-  return reason || "unknown";
 }
 
 export function CompressionCard({ events }: { events: CompressionEvent[] }) {
@@ -61,7 +52,7 @@ export function CompressionCard({ events }: { events: CompressionEvent[] }) {
           >
             <div className="flex flex-wrap items-center gap-2">
               <span className="rounded-full bg-[rgba(15,139,141,0.12)] px-2 py-1 text-[11px] font-medium text-[var(--color-ocean)]">
-                {formatReason(event.reason)}
+                {getCompressionReasonLabel(event.reason)}
               </span>
               {event.degraded ? (
                 <span className="inline-flex items-center gap-1 rounded-full bg-[rgba(212,106,74,0.12)] px-2 py-1 text-[11px] font-medium text-[var(--color-ember)]">

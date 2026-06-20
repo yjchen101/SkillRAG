@@ -18,3 +18,13 @@ export function getCompressionSavingsLabel({
 export function getCompressionEventCountLabel(count: number) {
   return `最近 ${count} 次压缩`;
 }
+
+export function getCompressionReasonLabel(reason: string) {
+  if (reason === "prompt_tokens_exceeded") {
+    return "自动触发";
+  }
+  if (reason === "manual_request") {
+    return "手动触发";
+  }
+  return reason || "未知原因";
+}
