@@ -48,5 +48,5 @@ test("formatToolBlockValue explains empty tool input and output", () => {
 
 test("getToolNamesLabel explains empty and populated tool names", () => {
   assert.equal(getToolNamesLabel([]), "等待工具名称");
-  assert.equal(getToolNamesLabel(["read_file", "terminal"]), "read_file -> terminal");
+  assert.equal(getToolNamesLabel(["read_file", "terminal"]), "read_file、terminal");
 });
