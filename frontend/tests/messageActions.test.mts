@@ -3,6 +3,7 @@ import test from "node:test";
 
 import {
   canCopyMessage,
+  getCaptureMessageTitle,
   getCopyMessageLabel,
   getCopyMessageTitle,
   shouldResetCaptureState,
@@ -32,6 +33,17 @@ test("getCopyMessageTitle explains copy button state", () => {
   assert.equal(getCopyMessageTitle({ state: "copied", canCopy: true }), "这条消息已复制");
   assert.equal(getCopyMessageTitle({ state: "error", canCopy: true }), "复制失败，请重试");
   assert.equal(getCopyMessageTitle({ state: "idle", canCopy: false }), "消息为空，无法复制");
+});
+
+test("getCaptureMessageTitle explains capture button state", () => {
+  assert.equal(
+    getCaptureMessageTitle({ state: "idle", canCapture: true }),
+    "将这条回答保存为 knowledge Markdown 文件"
+  );
+  assert.equal(getCaptureMessageTitle({ state: "saving", canCapture: true }), "正在沉淀为知识");
+  assert.equal(getCaptureMessageTitle({ state: "saved", canCapture: true }), "已沉淀为知识");
+  assert.equal(getCaptureMessageTitle({ state: "error", canCapture: true }), "沉淀失败，请重试");
+  assert.equal(getCaptureMessageTitle({ state: "idle", canCapture: false }), "这条消息不可沉淀");
 });
 
 test("shouldResetCopyState resets only terminal feedback states", () => {

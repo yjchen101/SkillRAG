@@ -14,6 +14,7 @@ import {
   type CaptureState,
   canCopyMessage,
   copyTextToClipboard,
+  getCaptureMessageTitle,
   getCopyMessageLabel,
   getCopyMessageTitle,
   shouldResetCaptureState,
@@ -98,6 +99,7 @@ export function ChatMessage({
         : captureState === "error"
           ? "沉淀失败"
           : "沉淀为知识";
+  const captureTitle = getCaptureMessageTitle({ state: captureState, canCapture });
   const CopyIcon =
     copyState === "copying"
       ? Loader2
@@ -150,7 +152,7 @@ export function ChatMessage({
               }`}
               disabled={captureState === "saving" || captureState === "saved"}
               onClick={() => void handleCapture()}
-              title="将这条回答保存为 knowledge Markdown 文件"
+              title={captureTitle}
               type="button"
             >
               <CaptureIcon

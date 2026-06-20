@@ -50,6 +50,32 @@ export function getCopyMessageTitle({
   return "复制这条消息";
 }
 
+export function getCaptureMessageTitle({
+  state,
+  canCapture
+}: {
+  state: CaptureState;
+  canCapture: boolean;
+}) {
+  if (!canCapture) {
+    return "这条消息不可沉淀";
+  }
+
+  if (state === "saving") {
+    return "正在沉淀为知识";
+  }
+
+  if (state === "saved") {
+    return "已沉淀为知识";
+  }
+
+  if (state === "error") {
+    return "沉淀失败，请重试";
+  }
+
+  return "将这条回答保存为 knowledge Markdown 文件";
+}
+
 export function shouldResetCopyState(state: CopyState) {
   return state === "copied" || state === "error";
 }
