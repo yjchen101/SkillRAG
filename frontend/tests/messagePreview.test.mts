@@ -3,6 +3,7 @@ import test from "node:test";
 
 import {
   getMessagePreview,
+  getRawMessageEmptyText,
   getRawMessageIndexLabel,
   getRawMessageToolLabel
 } from "../src/lib/messagePreview.ts";
@@ -47,4 +48,11 @@ test("getRawMessageIndexLabel marks the latest raw message", () => {
 test("getRawMessageToolLabel describes tool usage in Chinese", () => {
   assert.equal(getRawMessageToolLabel(0), "无工具");
   assert.equal(getRawMessageToolLabel(2), "2 个工具");
+});
+
+test("getRawMessageEmptyText explains when raw messages appear", () => {
+  assert.equal(
+    getRawMessageEmptyText(),
+    "当前会话还没有消息，发送后会在这里显示原始消息"
+  );
 });

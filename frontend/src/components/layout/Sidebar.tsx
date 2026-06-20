@@ -6,6 +6,7 @@ import { useEffect, useMemo, useState } from "react";
 import { hasActiveFilter } from "@/lib/filterControls";
 import {
   getMessagePreview,
+  getRawMessageEmptyText,
   getRawMessageIndexLabel,
   getRawMessageToolLabel
 } from "@/lib/messagePreview";
@@ -319,7 +320,7 @@ export function Sidebar() {
           ))}
           {!messages.length && (
             <div className="rounded-2xl border border-dashed border-[var(--color-line)] bg-white/35 px-3 py-5 text-center text-sm text-[var(--color-ink-soft)]">
-              当前会话还没有消息
+              {getRawMessageEmptyText()}
             </div>
           )}
         </div>
