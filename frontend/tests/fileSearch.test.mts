@@ -25,6 +25,10 @@ test("getFileSearchEmptyMessage includes the trimmed query", () => {
 
 test("getFileFilterCountLabel reports filtered file totals", () => {
   assert.equal(
+    getFileFilterCountLabel({ filteredCount: 0, totalCount: 0, query: "" }),
+    "暂无可编辑文件"
+  );
+  assert.equal(
     getFileFilterCountLabel({ filteredCount: 3, totalCount: 10, query: "  skill  " }),
     "匹配 3 / 10 个文件"
   );

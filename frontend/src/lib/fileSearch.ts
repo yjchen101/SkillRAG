@@ -22,6 +22,10 @@ export function getFileFilterCountLabel({
   totalCount: number;
   query: string;
 }) {
+  if (totalCount === 0) {
+    return "暂无可编辑文件";
+  }
+
   return query.trim()
     ? `匹配 ${filteredCount} / ${totalCount} 个文件`
     : `共 ${totalCount} 个文件`;
