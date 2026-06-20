@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { getWorkspaceStatusView } from "../src/lib/workspaceStatus.ts";
+import { getWorkspaceRetryLabel, getWorkspaceStatusView } from "../src/lib/workspaceStatus.ts";
 
 test("getWorkspaceStatusView returns loading copy while initializing", () => {
   assert.deepEqual(getWorkspaceStatusView({ isInitializing: true, error: null }), {
@@ -21,4 +21,9 @@ test("getWorkspaceStatusView returns retryable error copy when initialization fa
 
 test("getWorkspaceStatusView returns null when the workspace is ready", () => {
   assert.equal(getWorkspaceStatusView({ isInitializing: false, error: null }), null);
+});
+
+test("getWorkspaceRetryLabel reflects retry progress", () => {
+  assert.equal(getWorkspaceRetryLabel(false), "重试连接");
+  assert.equal(getWorkspaceRetryLabel(true), "正在重试");
 });

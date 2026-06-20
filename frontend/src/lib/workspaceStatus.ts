@@ -30,3 +30,7 @@ export function getWorkspaceStatusView(state: WorkspaceStatusState): WorkspaceSt
 
   return null;
 }
+
+export function getWorkspaceRetryLabel(isRetrying: boolean) {
+  return isRetrying ? "正在重试" : "重试连接";
+}

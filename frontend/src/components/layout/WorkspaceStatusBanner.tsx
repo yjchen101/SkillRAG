@@ -1,12 +1,14 @@
 "use client";
 
 import { Loader2, RefreshCw, TriangleAlert } from "lucide-react";
+import { useState } from "react";
 
 import { useAppStore } from "@/lib/store";
-import { getWorkspaceStatusView } from "@/lib/workspaceStatus";
+import { getWorkspaceRetryLabel, getWorkspaceStatusView } from "@/lib/workspaceStatus";
 
 export function WorkspaceStatusBanner() {
   const { isInitializing, workspaceError, retryInitialize } = useAppStore();
+  const [isRetrying, setIsRetrying] = useState(false);
   const view = getWorkspaceStatusView({ isInitializing, error: workspaceError });
 
   if (!view) {
@@ -15,6 +17,20 @@ export function WorkspaceStatusBanner() {
 
   const isLoading = view.kind === "loading";
   const Icon = isLoading ? Loader2 : TriangleAlert;
+  const retryLabel = getWorkspaceRetryLabel(isRetrying);
+
+  async function handleRetry() {
+    if (isRetrying) {
+      return;
+    }
+
+    setIsRetrying(true);
+    try {
+      await retryInitialize();
+    } finally {
+      setIsRetrying(false);
+    }
+  }
 
   return (
     <section
@@ -38,12 +54,13 @@ export function WorkspaceStatusBanner() {
       </div>
       {!isLoading && (
         <button
-          className="flex items-center justify-center gap-2 rounded-full bg-[rgba(212,106,74,0.12)] px-4 py-2 text-sm text-[var(--color-ember)]"
-          onClick={() => void retryInitialize()}
+          className="flex items-center justify-center gap-2 rounded-full bg-[rgba(212,106,74,0.12)] px-4 py-2 text-sm text-[var(--color-ember)] disabled:cursor-not-allowed disabled:opacity-65"
+          disabled={isRetrying}
+          onClick={() => void handleRetry()}
           type="button"
         >
-          <RefreshCw size={16} />
-          重试连接
+          <RefreshCw className={isRetrying ? "animate-spin" : ""} size={16} />
+          {retryLabel}
         </button>
       )}
     </section>
