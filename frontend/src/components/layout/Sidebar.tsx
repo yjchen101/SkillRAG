@@ -4,13 +4,10 @@ import { Check, MessageSquare, Pencil, Plus, Search, Trash2, X } from "lucide-re
 import { useEffect, useMemo, useState } from "react";
 
 import { hasActiveFilter } from "@/lib/filterControls";
+import { getMessagePreview } from "@/lib/messagePreview";
 import { formatRelativeTime } from "@/lib/relativeTime";
 import { getSessionActionState } from "@/lib/sessionActions";
 import { useAppStore } from "@/lib/store";
-
-function preview(text: string) {
-  return text.length > 72 ? `${text.slice(0, 72)}...` : text;
-}
 
 export function Sidebar() {
   const {
@@ -258,7 +255,11 @@ export function Sidebar() {
                 <span>{message.toolCalls.length} tools</span>
               </div>
               <p className="break-words text-sm text-[var(--color-ink-soft)]">
-                {preview(message.content)}
+                {getMessagePreview({
+                  content: message.content,
+                  role: message.role,
+                  isStreaming
+                })}
               </p>
             </div>
           ))}
