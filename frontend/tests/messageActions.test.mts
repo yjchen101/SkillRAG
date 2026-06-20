@@ -4,6 +4,7 @@ import test from "node:test";
 import {
   canCopyMessage,
   getCopyMessageLabel,
+  getCopyMessageTitle,
   shouldResetCaptureState,
   shouldResetCopyState
 } from "../src/lib/messageActions.ts";
@@ -23,6 +24,14 @@ test("getCopyMessageLabel maps copy states to user-facing labels", () => {
   assert.equal(getCopyMessageLabel("copying"), "复制中");
   assert.equal(getCopyMessageLabel("copied"), "已复制");
   assert.equal(getCopyMessageLabel("error"), "复制失败");
+});
+
+test("getCopyMessageTitle explains copy button state", () => {
+  assert.equal(getCopyMessageTitle({ state: "idle", canCopy: true }), "复制这条消息");
+  assert.equal(getCopyMessageTitle({ state: "copying", canCopy: true }), "正在复制这条消息");
+  assert.equal(getCopyMessageTitle({ state: "copied", canCopy: true }), "这条消息已复制");
+  assert.equal(getCopyMessageTitle({ state: "error", canCopy: true }), "复制失败，请重试");
+  assert.equal(getCopyMessageTitle({ state: "idle", canCopy: false }), "消息为空，无法复制");
 });
 
 test("shouldResetCopyState resets only terminal feedback states", () => {

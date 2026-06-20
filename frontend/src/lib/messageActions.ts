@@ -24,6 +24,32 @@ export function getCopyMessageLabel(state: CopyState) {
   return "复制";
 }
 
+export function getCopyMessageTitle({
+  state,
+  canCopy
+}: {
+  state: CopyState;
+  canCopy: boolean;
+}) {
+  if (!canCopy) {
+    return "消息为空，无法复制";
+  }
+
+  if (state === "copying") {
+    return "正在复制这条消息";
+  }
+
+  if (state === "copied") {
+    return "这条消息已复制";
+  }
+
+  if (state === "error") {
+    return "复制失败，请重试";
+  }
+
+  return "复制这条消息";
+}
+
 export function shouldResetCopyState(state: CopyState) {
   return state === "copied" || state === "error";
 }

@@ -15,6 +15,7 @@ import {
   canCopyMessage,
   copyTextToClipboard,
   getCopyMessageLabel,
+  getCopyMessageTitle,
   shouldResetCaptureState,
   shouldResetCopyState,
   type CopyState
@@ -106,6 +107,7 @@ export function ChatMessage({
           ? TriangleAlert
           : Copy;
   const copyLabel = getCopyMessageLabel(copyState);
+  const copyTitle = getCopyMessageTitle({ state: copyState, canCopy });
 
   return (
     <article
@@ -130,7 +132,7 @@ export function ChatMessage({
               }`}
               disabled={copyState === "copying"}
               onClick={() => void handleCopy()}
-              title="复制这条消息"
+              title={copyTitle}
               type="button"
             >
               <CopyIcon className={copyState === "copying" ? "animate-spin" : ""} size={14} />
