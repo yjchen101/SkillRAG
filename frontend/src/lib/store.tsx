@@ -35,6 +35,7 @@ import {
   type ToolCall
 } from "@/lib/api";
 import {
+  clearNotifications as clearNotificationsModel,
   createNotification,
   dismissNotification as dismissNotificationModel,
   type AppNotification,
@@ -91,6 +92,7 @@ type AppStore = {
   captureMessageAsKnowledge: (messageId: string) => Promise<{ path: string; title: string } | null>;
   rebuildKnowledgeIndex: () => Promise<void>;
   dismissNotification: (notificationId: string) => void;
+  clearNotifications: () => void;
   setSidebarWidth: (width: number) => void;
   setInspectorWidth: (width: number) => void;
 };
@@ -249,6 +251,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   function dismissNotification(notificationId: string) {
     setNotifications((prev) => dismissNotificationModel(prev, notificationId));
+  }
+
+  function clearNotifications() {
+    setNotifications((prev) => clearNotificationsModel(prev));
   }
 
   const initializeWorkspace = useCallback(async () => {
@@ -713,6 +719,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     captureMessageAsKnowledge,
     rebuildKnowledgeIndex,
     dismissNotification,
+    clearNotifications,
     setSidebarWidth,
     setInspectorWidth
   };

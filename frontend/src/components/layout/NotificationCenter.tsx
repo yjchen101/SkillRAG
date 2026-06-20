@@ -22,7 +22,7 @@ const toneIcons = {
 };
 
 export function NotificationCenter() {
-  const { notifications, dismissNotification } = useAppStore();
+  const { notifications, dismissNotification, clearNotifications } = useAppStore();
 
   useEffect(() => {
     if (!notifications.length) {
@@ -44,6 +44,18 @@ export function NotificationCenter() {
 
   return (
     <div className="pointer-events-none fixed right-4 top-4 z-50 flex w-[min(420px,calc(100vw-2rem))] flex-col gap-3">
+      {notifications.length > 1 && (
+        <div className="pointer-events-auto flex justify-end">
+          <button
+            className="rounded-full border border-[var(--color-line)] bg-white/85 px-3 py-1 text-xs text-[var(--color-ink-soft)] shadow-panel backdrop-blur-xl transition hover:text-[var(--color-ink)]"
+            onClick={clearNotifications}
+            title="关闭全部通知"
+            type="button"
+          >
+            全部关闭
+          </button>
+        </div>
+      )}
       {notifications.map((notification) => {
         const Icon = toneIcons[notification.tone];
 

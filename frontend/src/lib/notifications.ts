@@ -45,6 +45,10 @@ export function dismissNotification(
   return notifications.filter((notification) => notification.id !== notificationId);
 }
 
+export function clearNotifications(_notifications: AppNotification[]) {
+  return [];
+}
+
 export function getNotificationDismissDelay(
   notification: AppNotification,
   now = Date.now(),

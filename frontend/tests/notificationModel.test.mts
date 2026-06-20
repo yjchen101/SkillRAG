@@ -3,6 +3,7 @@ import test from "node:test";
 
 import {
   NOTIFICATION_AUTO_DISMISS_MS,
+  clearNotifications,
   createNotification,
   dismissNotification,
   getNotificationDismissDelay
@@ -41,6 +42,15 @@ test("dismissNotification removes only the matching notification", () => {
     dismissNotification(notifications, "b").map((notification) => notification.id),
     ["a", "c"]
   );
+});
+
+test("clearNotifications removes every visible notification", () => {
+  const notifications = [
+    createNotification({ title: "A", tone: "info" }, { now: () => 1, makeId: () => "a" }),
+    createNotification({ title: "B", tone: "error" }, { now: () => 2, makeId: () => "b" })
+  ];
+
+  assert.deepEqual(clearNotifications(notifications), []);
 });
 
 test("getNotificationDismissDelay keeps each notification on its own timer", () => {
