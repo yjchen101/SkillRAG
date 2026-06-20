@@ -14,6 +14,7 @@ import {
   getCompressionReasonLabel,
   getCompressionTimestampLabel,
   getCompressionWindowTitle,
+  getKeptRecentTurnCountLabel,
   getCompressionSavingsLabel
 } from "@/lib/compressionView";
 
@@ -83,7 +84,7 @@ export function CompressionCard({ events }: { events: CompressionEvent[] }) {
                   {getCompressedMessageCountLabel(event.compressed_message_count)}
                 </div>
                 <div className="mt-1 text-xs text-[var(--color-ink-soft)]">
-                  kept {event.kept_recent_turn_count} recent turns
+                  {getKeptRecentTurnCountLabel(event.kept_recent_turn_count)}
                 </div>
               </div>
             </div>

@@ -10,6 +10,7 @@ import {
   getCompressionReasonLabel,
   getCompressionTimestampLabel,
   getCompressionWindowTitle,
+  getKeptRecentTurnCountLabel,
   getCompressionSavingsLabel
 } from "../src/lib/compressionView.ts";
 
@@ -76,4 +77,8 @@ test("getCompressionWindowTitle localizes the window panel heading", () => {
 
 test("getCompressedMessageCountLabel localizes compressed message counts", () => {
   assert.equal(getCompressedMessageCountLabel(3), "已压缩 3 条消息");
+});
+
+test("getKeptRecentTurnCountLabel localizes retained recent turns", () => {
+  assert.equal(getKeptRecentTurnCountLabel(2), "保留最近 2 轮");
 });

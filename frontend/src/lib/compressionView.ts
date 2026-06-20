@@ -62,3 +62,7 @@ export function getCompressionWindowTitle() {
 export function getCompressedMessageCountLabel(count: number) {
   return `已压缩 ${count} 条消息`;
 }
+
+export function getKeptRecentTurnCountLabel(count: number) {
+  return `保留最近 ${count} 轮`;
+}
