@@ -3,7 +3,7 @@
 import { Database, FileSearch, Plus, Sparkles, Wrench } from "lucide-react";
 
 import { getKnowledgeIndexView } from "@/lib/knowledgeIndexView";
-import { getRagModeToggleTitle } from "@/lib/ragModeView";
+import { getRagModeToggleLabel, getRagModeToggleTitle } from "@/lib/ragModeView";
 import {
   getCompressionActionButtonTitle,
   getNavbarNewSessionButtonTitle,
@@ -31,6 +31,7 @@ export function Navbar() {
   const isIndexBuilding = Boolean(knowledgeIndexStatus?.building);
   const knowledgeIndexView = getKnowledgeIndexView(knowledgeIndexStatus);
   const ragModeTitle = getRagModeToggleTitle(ragMode);
+  const ragModeLabel = getRagModeToggleLabel(ragMode);
   const sessionActionState = getSessionActionState({
     isStreaming,
     isInitializing,
@@ -84,7 +85,7 @@ export function Navbar() {
           type="button"
         >
           <Database size={16} />
-          {ragMode ? "RAG 已开" : "RAG 已关"}
+          {ragModeLabel}
         </button>
         <button
           className="flex items-center gap-2 rounded-full border border-[var(--color-line)] bg-white/60 px-4 py-2 text-sm disabled:cursor-not-allowed disabled:text-[var(--color-ink-soft)]"
