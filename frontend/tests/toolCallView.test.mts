@@ -4,6 +4,7 @@ import test from "node:test";
 import {
   TOOL_BLOCK_PREVIEW_LIMIT,
   formatToolBlockValue,
+  getToolNamesLabel,
   getToolBlockPreview,
   summarizeToolCalls
 } from "../src/lib/toolCallView.ts";
@@ -43,4 +44,9 @@ test("getToolBlockPreview truncates long tool content", () => {
 test("formatToolBlockValue explains empty tool input and output", () => {
   assert.equal(formatToolBlockValue("", "input"), "暂无输入");
   assert.equal(formatToolBlockValue("  ", "output"), "等待输出");
+});
+
+test("getToolNamesLabel explains empty and populated tool names", () => {
+  assert.equal(getToolNamesLabel([]), "等待工具名称");
+  assert.equal(getToolNamesLabel(["read_file", "terminal"]), "read_file -> terminal");
 });

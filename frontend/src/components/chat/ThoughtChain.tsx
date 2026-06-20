@@ -7,6 +7,7 @@ import type { ToolCall } from "@/lib/api";
 import {
   formatToolBlockValue,
   getToolBlockPreview,
+  getToolNamesLabel,
   summarizeToolCalls
 } from "@/lib/toolCallView";
 
@@ -82,7 +83,7 @@ export function ThoughtChain({ toolCalls }: { toolCalls: ToolCall[] }) {
             )}
           </div>
           <div className="truncate text-xs font-normal text-[var(--color-ink-soft)]">
-            {summary.toolNames.join(" -> ")}
+            {getToolNamesLabel(summary.toolNames)}
           </div>
         </div>
         <span className="shrink-0 text-xs font-normal text-[var(--color-ink-soft)]">

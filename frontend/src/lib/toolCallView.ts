@@ -34,6 +34,10 @@ export function getToolBlockPreview(value: string, limit = TOOL_BLOCK_PREVIEW_LI
   };
 }
 
+export function getToolNamesLabel(toolNames: string[]) {
+  return toolNames.length ? toolNames.join(" -> ") : "等待工具名称";
+}
+
 export function formatToolBlockValue(value: string, kind: "input" | "output") {
   const text = value.trim();
   if (!text) {
