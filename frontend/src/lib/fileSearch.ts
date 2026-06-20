@@ -16,3 +16,7 @@ export function getFileFilterCountLabel({
     ? `匹配 ${filteredCount} / ${totalCount} 个文件`
     : `共 ${totalCount} 个文件`;
 }
+
+export function getFilePathChipTitle(path: string) {
+  return `打开文件：${path}`;
+}

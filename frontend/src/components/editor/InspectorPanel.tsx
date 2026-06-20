@@ -4,7 +4,11 @@ import Editor from "@monaco-editor/react";
 import { Save, Search, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
-import { getFileFilterCountLabel, getFileSearchEmptyMessage } from "@/lib/fileSearch";
+import {
+  getFileFilterCountLabel,
+  getFilePathChipTitle,
+  getFileSearchEmptyMessage
+} from "@/lib/fileSearch";
 import { hasActiveFilter } from "@/lib/filterControls";
 import {
   getInspectorSaveLabel,
@@ -176,6 +180,7 @@ export function InspectorPanel() {
             }`}
             key={path}
             onClick={() => openFile(path)}
+            title={getFilePathChipTitle(path)}
             type="button"
           >
             {path}

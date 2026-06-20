@@ -3,6 +3,7 @@ import test from "node:test";
 
 import {
   getFileFilterCountLabel,
+  getFilePathChipTitle,
   getFileSearchEmptyMessage
 } from "../src/lib/fileSearch.ts";
 
@@ -23,5 +24,12 @@ test("getFileFilterCountLabel reports filtered file totals", () => {
   assert.equal(
     getFileFilterCountLabel({ filteredCount: 10, totalCount: 10, query: "" }),
     "共 10 个文件"
+  );
+});
+
+test("getFilePathChipTitle explains the file chip action", () => {
+  assert.equal(
+    getFilePathChipTitle("skills/rag-skill/SKILL.md"),
+    "打开文件：skills/rag-skill/SKILL.md"
   );
 });
