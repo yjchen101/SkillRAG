@@ -6,7 +6,11 @@ import { useEffect, useRef, useState } from "react";
 import { CompressionCard } from "@/components/chat/CompressionCard";
 import { ChatInput } from "@/components/chat/ChatInput";
 import { ChatMessage } from "@/components/chat/ChatMessage";
-import { isNearScrollBottom, shouldAutoScrollChat } from "@/lib/chatScroll";
+import {
+  getScrollToLatestTitle,
+  isNearScrollBottom,
+  shouldAutoScrollChat
+} from "@/lib/chatScroll";
 import { getStarterPromptCountLabel, getStarterPrompts } from "@/lib/starterPrompts";
 import { useAppStore } from "@/lib/store";
 import { getTokenStatsView } from "@/lib/tokenStatsView";
@@ -142,6 +146,7 @@ export function ChatPanel() {
           <button
             className="absolute bottom-5 right-6 flex items-center gap-2 rounded-full bg-[rgba(13,37,48,0.92)] px-4 py-2 text-sm text-white shadow-panel"
             onClick={scrollToLatest}
+            title={getScrollToLatestTitle()}
             type="button"
           >
             <ArrowDown size={16} />

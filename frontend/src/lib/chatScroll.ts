@@ -19,3 +19,7 @@ export function isNearScrollBottom({
 export function shouldAutoScrollChat(isNearBottom: boolean) {
   return isNearBottom;
 }
+
+export function getScrollToLatestTitle() {
+  return "滚动到最新消息";
+}
