@@ -3,6 +3,7 @@
 import { Check, MessageSquare, Pencil, Plus, Search, Trash2, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
+import { hasActiveFilter } from "@/lib/filterControls";
 import { formatRelativeTime } from "@/lib/relativeTime";
 import { getSessionActionState } from "@/lib/sessionActions";
 import { useAppStore } from "@/lib/store";
@@ -27,6 +28,7 @@ export function Sidebar() {
   const [editingSessionId, setEditingSessionId] = useState<string | null>(null);
   const [draftTitle, setDraftTitle] = useState("");
   const [sessionFilter, setSessionFilter] = useState("");
+  const hasSessionFilter = hasActiveFilter(sessionFilter);
 
   const filteredSessions = useMemo(() => {
     const query = sessionFilter.trim().toLowerCase();
@@ -125,6 +127,16 @@ export function Sidebar() {
           type="search"
           value={sessionFilter}
         />
+        {hasSessionFilter && (
+          <button
+            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white/70 text-[var(--color-ink-soft)] transition hover:text-[var(--color-ink)]"
+            onClick={() => setSessionFilter("")}
+            title="清空会话搜索"
+            type="button"
+          >
+            <X size={14} />
+          </button>
+        )}
       </label>
       {sessionActionState.reason && (
         <div className="mb-3 rounded-2xl border border-[rgba(212,106,74,0.22)] bg-[rgba(212,106,74,0.1)] px-3 py-2 text-sm text-[var(--color-ember)]">
