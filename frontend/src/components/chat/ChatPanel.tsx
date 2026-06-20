@@ -12,7 +12,11 @@ import {
   isNearScrollBottom,
   shouldAutoScrollChat
 } from "@/lib/chatScroll";
-import { getStarterPromptCountLabel, getStarterPrompts } from "@/lib/starterPrompts";
+import {
+  getChatPanelSectionLabels,
+  getStarterPromptCountLabel,
+  getStarterPrompts
+} from "@/lib/starterPrompts";
 import { useAppStore } from "@/lib/store";
 import { getTokenStatsView } from "@/lib/tokenStatsView";
 
@@ -32,6 +36,7 @@ export function ChatPanel() {
   const [isAtBottom, setIsAtBottom] = useState(true);
   const starterPrompts = getStarterPrompts();
   const starterPromptCountLabel = getStarterPromptCountLabel(starterPrompts.length);
+  const chatPanelSectionLabels = getChatPanelSectionLabels();
   const tokenStatsView = getTokenStatsView(tokenStats);
   const inputDisabled = isStreaming || isInitializing || Boolean(workspaceError);
   const inputAvailabilityCopy = getChatInputAvailabilityCopy({
@@ -71,7 +76,7 @@ export function ChatPanel() {
       <div className="panel flex flex-col gap-3 rounded-[30px] px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="min-w-0">
           <p className="text-xs uppercase tracking-[0.28em] text-[var(--color-ink-soft)]">
-            Conversation
+            {chatPanelSectionLabels.conversation}
           </p>
           <h2 className="break-words text-lg font-semibold tracking-[-0.04em]">
             实时对话与检索轨迹
@@ -93,7 +98,7 @@ export function ChatPanel() {
           {!messages.length && (
             <div className="rounded-[28px] border border-dashed border-[var(--color-line)] bg-white/45 p-8">
               <p className="text-xs uppercase tracking-[0.28em] text-[var(--color-ink-soft)]">
-                Ready
+                {chatPanelSectionLabels.ready}
               </p>
               <h3 className="mt-2 text-3xl font-semibold tracking-[-0.05em]">
                 一个本地、透明、文件驱动的 Agent 工作台

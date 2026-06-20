@@ -37,3 +37,10 @@ export function getStarterPromptCountLabel(count: number) {
 
   return `${count} 个起步问题`;
 }
+
+export function getChatPanelSectionLabels() {
+  return {
+    conversation: "对话",
+    ready: "就绪"
+  };
+}

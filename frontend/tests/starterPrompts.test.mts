@@ -1,7 +1,11 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { getStarterPromptCountLabel, getStarterPrompts } from "../src/lib/starterPrompts.ts";
+import {
+  getChatPanelSectionLabels,
+  getStarterPromptCountLabel,
+  getStarterPrompts
+} from "../src/lib/starterPrompts.ts";
 
 test("getStarterPrompts exposes several actionable prompts", () => {
   const prompts = getStarterPrompts();
@@ -24,4 +28,11 @@ test("getStarterPrompts includes system, knowledge, and session-oriented prompts
 test("getStarterPromptCountLabel explains available starter actions", () => {
   assert.equal(getStarterPromptCountLabel(0), "暂无起步问题");
   assert.equal(getStarterPromptCountLabel(3), "3 个起步问题");
+});
+
+test("getChatPanelSectionLabels localizes visible panel labels", () => {
+  assert.deepEqual(getChatPanelSectionLabels(), {
+    conversation: "对话",
+    ready: "就绪"
+  });
 });
