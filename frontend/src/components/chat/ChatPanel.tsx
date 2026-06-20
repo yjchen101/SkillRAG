@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import { CompressionCard } from "@/components/chat/CompressionCard";
 import { ChatInput } from "@/components/chat/ChatInput";
 import { ChatMessage } from "@/components/chat/ChatMessage";
+import { getChatInputAvailabilityCopy } from "@/lib/chatInput";
 import {
   getScrollToLatestTitle,
   isNearScrollBottom,
@@ -33,13 +34,11 @@ export function ChatPanel() {
   const starterPromptCountLabel = getStarterPromptCountLabel(starterPrompts.length);
   const tokenStatsView = getTokenStatsView(tokenStats);
   const inputDisabled = isStreaming || isInitializing || Boolean(workspaceError);
-  const inputDisabledReason = isInitializing
-    ? "正在连接后端"
-    : workspaceError
-      ? "后端连接失败"
-      : isStreaming
-        ? "正在接收流式回复"
-        : undefined;
+  const inputAvailabilityCopy = getChatInputAvailabilityCopy({
+    isInitializing,
+    workspaceError,
+    isStreaming
+  });
 
   useEffect(() => {
     if (shouldAutoScrollChat(isAtBottom)) {
@@ -157,15 +156,9 @@ export function ChatPanel() {
 
       <ChatInput
         disabled={inputDisabled}
-        disabledReason={inputDisabledReason}
+        disabledReason={inputAvailabilityCopy.disabledReason}
         onSend={sendMessage}
-        placeholder={
-          isInitializing
-            ? "正在连接后端，稍后即可发送"
-            : workspaceError
-              ? "后端连接失败，重试成功后再发送"
-              : undefined
-        }
+        placeholder={inputAvailabilityCopy.placeholder}
       />
     </section>
   );

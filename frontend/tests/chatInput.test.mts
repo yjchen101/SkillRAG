@@ -4,6 +4,7 @@ import test from "node:test";
 import {
   CHAT_INPUT_MAX_HEIGHT,
   CHAT_INPUT_MIN_HEIGHT,
+  getChatInputAvailabilityCopy,
   getChatInputClearTitle,
   getChatInputCountLabel,
   getChatInputHeight,
@@ -72,10 +73,38 @@ test("getChatInputSendTitle explains why sending is unavailable", () => {
   assert.equal(
     getChatInputSendTitle({
       disabled: true,
-      disabledReason: "正在连接后端",
+      disabledReason: "正在连接工作台",
       value: "hi"
     }),
-    "正在连接后端"
+    "正在连接工作台"
+  );
+});
+
+test("getChatInputAvailabilityCopy explains workspace availability", () => {
+  assert.deepEqual(
+    getChatInputAvailabilityCopy({ isInitializing: true, workspaceError: null, isStreaming: false }),
+    {
+      disabledReason: "正在连接工作台",
+      placeholder: "正在连接工作台，稍后即可发送"
+    }
+  );
+  assert.deepEqual(
+    getChatInputAvailabilityCopy({
+      isInitializing: false,
+      workspaceError: "fetch failed",
+      isStreaming: false
+    }),
+    {
+      disabledReason: "工作台连接失败",
+      placeholder: "工作台连接失败，重试成功后再发送"
+    }
+  );
+  assert.deepEqual(
+    getChatInputAvailabilityCopy({ isInitializing: false, workspaceError: null, isStreaming: true }),
+    {
+      disabledReason: "正在接收流式回复",
+      placeholder: undefined
+    }
   );
 });
 

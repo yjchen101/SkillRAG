@@ -48,6 +48,42 @@ export function getChatInputSendTitle({
   return "发送消息";
 }
 
+export function getChatInputAvailabilityCopy({
+  isInitializing,
+  workspaceError,
+  isStreaming
+}: {
+  isInitializing: boolean;
+  workspaceError: string | null;
+  isStreaming: boolean;
+}) {
+  if (isInitializing) {
+    return {
+      disabledReason: "正在连接工作台",
+      placeholder: "正在连接工作台，稍后即可发送"
+    };
+  }
+
+  if (workspaceError) {
+    return {
+      disabledReason: "工作台连接失败",
+      placeholder: "工作台连接失败，重试成功后再发送"
+    };
+  }
+
+  if (isStreaming) {
+    return {
+      disabledReason: "正在接收流式回复",
+      placeholder: undefined
+    };
+  }
+
+  return {
+    disabledReason: undefined,
+    placeholder: undefined
+  };
+}
+
 export function getChatInputClearTitle() {
   return "清空当前输入";
 }
