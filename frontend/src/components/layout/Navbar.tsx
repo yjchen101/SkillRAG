@@ -103,6 +103,7 @@ export function Navbar() {
           }`}
           disabled={isIndexBuilding}
           onClick={() => void rebuildKnowledgeIndex()}
+          title={knowledgeIndexView.title}
           type="button"
         >
           <FileSearch size={16} />

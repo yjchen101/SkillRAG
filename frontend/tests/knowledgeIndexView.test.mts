@@ -27,6 +27,7 @@ test("getKnowledgeIndexView shows a neutral building state", () => {
 
   assert.equal(view.label, "索引重建中");
   assert.equal(view.hint, "知识索引构建中 · 仅 Vector 就绪");
+  assert.equal(view.title, "知识索引正在构建，请稍候");
   assert.match(view.hintClassName, /text-ocean/);
 });
 
@@ -47,6 +48,7 @@ test("getKnowledgeIndexView shows ready indexes as healthy", () => {
 
   assert.equal(view.label, "重建索引");
   assert.equal(view.hint, "知识索引已就绪 · 12 个文件 · Vector/BM25 已就绪");
+  assert.equal(view.title, "重建知识索引");
   assert.match(view.hintClassName, /text-ocean/);
 });
 

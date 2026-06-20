@@ -4,6 +4,7 @@ export type KnowledgeIndexView = {
   label: string;
   hint: string;
   hintClassName: string;
+  title: string;
 };
 
 const NORMAL_HINT_CLASS = "bg-[rgba(15,139,141,0.12)] text-ocean";
@@ -38,7 +39,8 @@ export function getKnowledgeIndexView(
     return {
       label: "索引重建中",
       hint: `知识索引构建中 · ${backendLabel}`,
-      hintClassName: NORMAL_HINT_CLASS
+      hintClassName: NORMAL_HINT_CLASS,
+      title: "知识索引正在构建，请稍候"
     };
   }
 
@@ -46,7 +48,8 @@ export function getKnowledgeIndexView(
     return {
       label: "重建索引",
       hint: `${status.stale_files ?? 0} 个知识文件待索引 · ${backendLabel}`,
-      hintClassName: WARNING_HINT_CLASS
+      hintClassName: WARNING_HINT_CLASS,
+      title: "重建知识索引"
     };
   }
 
@@ -54,13 +57,15 @@ export function getKnowledgeIndexView(
     return {
       label: "重建索引",
       hint: `知识索引已就绪 · ${status.indexed_files} 个文件 · ${backendLabel}`,
-      hintClassName: NORMAL_HINT_CLASS
+      hintClassName: NORMAL_HINT_CLASS,
+      title: "重建知识索引"
     };
   }
 
   return {
     label: "重建索引",
     hint: `知识索引未就绪 · ${backendLabel}`,
-    hintClassName: WARNING_HINT_CLASS
+    hintClassName: WARNING_HINT_CLASS,
+    title: "重建知识索引"
   };
 }
