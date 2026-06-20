@@ -3,7 +3,11 @@
 import { SendHorizonal } from "lucide-react";
 import { useLayoutEffect, useRef, useState } from "react";
 
-import { getChatInputCountLabel, getChatInputHeight } from "@/lib/chatInput";
+import {
+  getChatInputCountLabel,
+  getChatInputHeight,
+  shouldRefocusChatInputAfterSend
+} from "@/lib/chatInput";
 
 export function ChatInput({
   disabled,
@@ -38,6 +42,9 @@ export function ChatInput({
 
     void onSend(nextValue);
     setValue("");
+    if (shouldRefocusChatInputAfterSend({ disabled, submittedValue: nextValue })) {
+      window.requestAnimationFrame(() => textareaRef.current?.focus());
+    }
   }
 
   return (

@@ -22,3 +22,13 @@ export function getChatInputHeight(
 export function getChatInputCountLabel(value: string) {
   return `${value.length} 字`;
 }
+
+export function shouldRefocusChatInputAfterSend({
+  disabled,
+  submittedValue
+}: {
+  disabled: boolean;
+  submittedValue: string;
+}) {
+  return !disabled && submittedValue.trim().length > 0;
+}

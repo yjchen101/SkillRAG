@@ -5,7 +5,8 @@ import {
   CHAT_INPUT_MAX_HEIGHT,
   CHAT_INPUT_MIN_HEIGHT,
   getChatInputCountLabel,
-  getChatInputHeight
+  getChatInputHeight,
+  shouldRefocusChatInputAfterSend
 } from "../src/lib/chatInput.ts";
 
 test("getChatInputHeight keeps short content at the minimum height", () => {
@@ -32,4 +33,19 @@ test("getChatInputHeight caps tall content and enables scrolling", () => {
 test("getChatInputCountLabel reports raw input length", () => {
   assert.equal(getChatInputCountLabel(""), "0 字");
   assert.equal(getChatInputCountLabel("hello"), "5 字");
+});
+
+test("shouldRefocusChatInputAfterSend only accepts submitted enabled input", () => {
+  assert.equal(
+    shouldRefocusChatInputAfterSend({ disabled: false, submittedValue: "hello" }),
+    true
+  );
+  assert.equal(
+    shouldRefocusChatInputAfterSend({ disabled: false, submittedValue: "   " }),
+    false
+  );
+  assert.equal(
+    shouldRefocusChatInputAfterSend({ disabled: true, submittedValue: "hello" }),
+    false
+  );
 });
