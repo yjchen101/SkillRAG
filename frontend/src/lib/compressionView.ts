@@ -66,3 +66,7 @@ export function getCompressedMessageCountLabel(count: number) {
 export function getKeptRecentTurnCountLabel(count: number) {
   return `保留最近 ${count} 轮`;
 }
+
+export function getCompressionCardTitle() {
+  return "压缩记录";
+}

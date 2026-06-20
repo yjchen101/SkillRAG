@@ -9,6 +9,7 @@ import {
   getCompressedMessageCountLabel,
   getCompressionBudgetTargetLabel,
   getCompressionBudgetTitle,
+  getCompressionCardTitle,
   getCompressionEventCountLabel,
   getCompressionRepairLabel,
   getCompressionReasonLabel,
@@ -30,7 +31,7 @@ export function CompressionCard({ events }: { events: CompressionEvent[] }) {
       <div className="flex flex-wrap items-center gap-2 text-sm font-medium text-[var(--color-ocean)]">
         <div className="flex items-center gap-2">
           <Archive size={16} />
-          Compression
+          {getCompressionCardTitle()}
         </div>
         <span className="rounded-full bg-white/70 px-2 py-0.5 text-[11px] font-normal text-[var(--color-ink-soft)]">
           {countLabel}

@@ -5,6 +5,7 @@ import {
   getCompressedMessageCountLabel,
   getCompressionBudgetTitle,
   getCompressionBudgetTargetLabel,
+  getCompressionCardTitle,
   getCompressionEventCountLabel,
   getCompressionRepairLabel,
   getCompressionReasonLabel,
@@ -81,4 +82,8 @@ test("getCompressedMessageCountLabel localizes compressed message counts", () =>
 
 test("getKeptRecentTurnCountLabel localizes retained recent turns", () => {
   assert.equal(getKeptRecentTurnCountLabel(2), "保留最近 2 轮");
+});
+
+test("getCompressionCardTitle localizes the compression card heading", () => {
+  assert.equal(getCompressionCardTitle(), "压缩记录");
 });
