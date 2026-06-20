@@ -4,6 +4,7 @@ import test from "node:test";
 import {
   getFileFilterCountLabel,
   getFilePathChipTitle,
+  getInspectorPanelLabels,
   getInspectorCurrentPathTitle,
   getInspectorSaveShortcutTitle,
   getFileSearchClearTitle,
@@ -68,4 +69,11 @@ test("getInspectorCurrentPathTitle falls back when the active path is empty", ()
 
 test("getInspectorSaveShortcutTitle explains the editor save shortcut", () => {
   assert.equal(getInspectorSaveShortcutTitle(), "按 Cmd 或 Ctrl + S 保存当前文件");
+});
+
+test("getInspectorPanelLabels localizes visible inspector labels", () => {
+  assert.deepEqual(getInspectorPanelLabels(), {
+    section: "检查器",
+    heading: "记忆 / 技能 / 提示"
+  });
 });

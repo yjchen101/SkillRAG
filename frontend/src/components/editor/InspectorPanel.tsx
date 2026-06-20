@@ -9,6 +9,7 @@ import {
   getFileSearchClearTitle,
   getFilePathChipTitle,
   getInspectorCurrentPathTitle,
+  getInspectorPanelLabels,
   getInspectorSaveShortcutTitle,
   getFileSearchEmptyMessage
 } from "@/lib/fileSearch";
@@ -39,6 +40,7 @@ export function InspectorPanel() {
   const [fileFilter, setFileFilter] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const hasFileFilter = hasActiveFilter(fileFilter);
+  const inspectorPanelLabels = getInspectorPanelLabels();
   const saveDisabled = shouldDisableInspectorSave({
     isDirty: inspectorDirty,
     isSaving
@@ -137,10 +139,10 @@ export function InspectorPanel() {
       <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="min-w-0">
           <p className="text-xs uppercase tracking-[0.28em] text-[var(--color-ink-soft)]">
-            Inspector
+            {inspectorPanelLabels.section}
           </p>
           <h2 className="break-words text-lg font-semibold tracking-[-0.04em]">
-            Memory / Skills / Prompt
+            {inspectorPanelLabels.heading}
           </h2>
         </div>
         <button

@@ -48,3 +48,10 @@ export function getInspectorCurrentPathTitle(path: string) {
 export function getInspectorSaveShortcutTitle() {
   return "按 Cmd 或 Ctrl + S 保存当前文件";
 }
+
+export function getInspectorPanelLabels() {
+  return {
+    section: "检查器",
+    heading: "记忆 / 技能 / 提示"
+  };
+}
