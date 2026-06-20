@@ -7,6 +7,7 @@ import { hasActiveFilter } from "@/lib/filterControls";
 import { getMessagePreview } from "@/lib/messagePreview";
 import { formatRelativeTime } from "@/lib/relativeTime";
 import { getSessionActionState } from "@/lib/sessionActions";
+import { getSessionSearchEmptyMessage } from "@/lib/sessionSearch";
 import { useAppStore } from "@/lib/store";
 
 export function Sidebar() {
@@ -235,7 +236,7 @@ export function Sidebar() {
         ))}
         {!filteredSessions.length && (
           <div className="rounded-3xl border border-dashed border-[var(--color-line)] bg-white/35 px-4 py-6 text-center text-sm text-[var(--color-ink-soft)]">
-            没有匹配的会话
+            {getSessionSearchEmptyMessage(sessionFilter)}
           </div>
         )}
       </div>
