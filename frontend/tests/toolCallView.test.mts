@@ -1,7 +1,11 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { summarizeToolCalls } from "../src/lib/toolCallView.ts";
+import {
+  TOOL_BLOCK_PREVIEW_LIMIT,
+  getToolBlockPreview,
+  summarizeToolCalls
+} from "../src/lib/toolCallView.ts";
 
 test("summarizeToolCalls counts finished and running calls", () => {
   assert.deepEqual(
@@ -17,4 +21,20 @@ test("summarizeToolCalls counts finished and running calls", () => {
       toolNames: ["read_file", "terminal"]
     }
   );
+});
+
+test("getToolBlockPreview leaves short tool content intact", () => {
+  assert.deepEqual(getToolBlockPreview("short output"), {
+    text: "short output",
+    isTruncated: false
+  });
+});
+
+test("getToolBlockPreview truncates long tool content", () => {
+  const value = "x".repeat(TOOL_BLOCK_PREVIEW_LIMIT + 5);
+
+  assert.deepEqual(getToolBlockPreview(value), {
+    text: `${"x".repeat(TOOL_BLOCK_PREVIEW_LIMIT)}...`,
+    isTruncated: true
+  });
 });

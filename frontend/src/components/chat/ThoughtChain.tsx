@@ -4,7 +4,7 @@ import { TerminalSquare } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import type { ToolCall } from "@/lib/api";
-import { summarizeToolCalls } from "@/lib/toolCallView";
+import { getToolBlockPreview, summarizeToolCalls } from "@/lib/toolCallView";
 
 function formatBlock(value: string) {
   const text = value.trim();
@@ -17,6 +17,31 @@ function formatBlock(value: string) {
   } catch {
     return text;
   }
+}
+
+function ToolBlock({ label, value }: { label: string; value: string }) {
+  const [isExpanded, setIsExpanded] = useState(false);
+  const formattedValue = formatBlock(value);
+  const preview = getToolBlockPreview(formattedValue);
+  const displayValue = preview.isTruncated && !isExpanded ? preview.text : formattedValue;
+
+  return (
+    <div className="rounded-2xl bg-[rgba(13,37,48,0.06)] p-3">
+      <div className="mb-1 flex items-center justify-between gap-2 font-medium text-[var(--color-ink-soft)]">
+        <span>{label}</span>
+        {preview.isTruncated && (
+          <button
+            className="rounded-full bg-white/65 px-2 py-1 text-[11px] text-[var(--color-ink-soft)] transition hover:text-[var(--color-ink)]"
+            onClick={() => setIsExpanded((current) => !current)}
+            type="button"
+          >
+            {isExpanded ? "收起" : "展开全部"}
+          </button>
+        )}
+      </div>
+      <pre className="mono whitespace-pre-wrap">{displayValue}</pre>
+    </div>
+  );
 }
 
 export function ThoughtChain({ toolCalls }: { toolCalls: ToolCall[] }) {
@@ -86,14 +111,8 @@ export function ThoughtChain({ toolCalls }: { toolCalls: ToolCall[] }) {
               </div>
 
               <div className="space-y-2 text-xs">
-                <div className="rounded-2xl bg-[rgba(13,37,48,0.06)] p-3">
-                  <div className="mb-1 font-medium text-[var(--color-ink-soft)]">输入</div>
-                  <pre className="mono whitespace-pre-wrap">{formatBlock(toolCall.input)}</pre>
-                </div>
-                <div className="rounded-2xl bg-[rgba(13,37,48,0.06)] p-3">
-                  <div className="mb-1 font-medium text-[var(--color-ink-soft)]">输出</div>
-                  <pre className="mono whitespace-pre-wrap">{formatBlock(toolCall.output)}</pre>
-                </div>
+                <ToolBlock label="输入" value={toolCall.input} />
+                <ToolBlock label="输出" value={toolCall.output} />
               </div>
             </div>
           );
