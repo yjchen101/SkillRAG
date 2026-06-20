@@ -5,7 +5,9 @@ import { useEffect } from "react";
 
 import { useAppStore } from "@/lib/store";
 import {
+  getNotificationClearAllTitle,
   getNotificationDismissDelay,
+  getNotificationDismissTitle,
   type AppNotification
 } from "@/lib/notifications";
 
@@ -49,7 +51,7 @@ export function NotificationCenter() {
           <button
             className="rounded-full border border-[var(--color-line)] bg-white/85 px-3 py-1 text-xs text-[var(--color-ink-soft)] shadow-panel backdrop-blur-xl transition hover:text-[var(--color-ink)]"
             onClick={clearNotifications}
-            title="关闭全部通知"
+            title={getNotificationClearAllTitle()}
             type="button"
           >
             全部关闭
@@ -79,7 +81,7 @@ export function NotificationCenter() {
               <button
                 className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[var(--color-ink-soft)] transition hover:bg-[rgba(13,37,48,0.08)]"
                 onClick={() => dismissNotification(notification.id)}
-                title="关闭通知"
+                title={getNotificationDismissTitle(notification.title)}
                 type="button"
               >
                 <X size={15} />

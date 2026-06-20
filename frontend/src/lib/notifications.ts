@@ -56,3 +56,12 @@ export function getNotificationDismissDelay(
 ) {
   return Math.max(0, durationMs - (now - notification.createdAt));
 }
+
+export function getNotificationDismissTitle(title: string) {
+  const trimmedTitle = title.trim();
+  return trimmedTitle ? `关闭通知：${trimmedTitle}` : "关闭这条通知";
+}
+
+export function getNotificationClearAllTitle() {
+  return "关闭全部通知并清空列表";
+}

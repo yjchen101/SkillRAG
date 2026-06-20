@@ -6,7 +6,9 @@ import {
   clearNotifications,
   createNotification,
   dismissNotification,
-  getNotificationDismissDelay
+  getNotificationClearAllTitle,
+  getNotificationDismissDelay,
+  getNotificationDismissTitle
 } from "../src/lib/notifications.ts";
 
 test("createNotification fills deterministic metadata", () => {
@@ -62,4 +64,10 @@ test("getNotificationDismissDelay keeps each notification on its own timer", () 
   assert.equal(getNotificationDismissDelay(notification, 1000), NOTIFICATION_AUTO_DISMISS_MS);
   assert.equal(getNotificationDismissDelay(notification, 3600), 2600);
   assert.equal(getNotificationDismissDelay(notification, 7000), 0);
+});
+
+test("notification action titles explain what will be removed", () => {
+  assert.equal(getNotificationDismissTitle("保存成功"), "关闭通知：保存成功");
+  assert.equal(getNotificationDismissTitle("   "), "关闭这条通知");
+  assert.equal(getNotificationClearAllTitle(), "关闭全部通知并清空列表");
 });
