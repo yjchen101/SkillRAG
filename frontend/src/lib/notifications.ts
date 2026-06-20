@@ -8,6 +8,8 @@ export type AppNotification = {
   createdAt: number;
 };
 
+export const NOTIFICATION_AUTO_DISMISS_MS = 5200;
+
 type NotificationInput = {
   title: string;
   message?: string;
@@ -41,4 +43,12 @@ export function dismissNotification(
   notificationId: string
 ) {
   return notifications.filter((notification) => notification.id !== notificationId);
+}
+
+export function getNotificationDismissDelay(
+  notification: AppNotification,
+  now = Date.now(),
+  durationMs = NOTIFICATION_AUTO_DISMISS_MS
+) {
+  return Math.max(0, durationMs - (now - notification.createdAt));
 }

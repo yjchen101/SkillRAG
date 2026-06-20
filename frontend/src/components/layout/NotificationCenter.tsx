@@ -4,7 +4,10 @@ import { CheckCircle2, Info, TriangleAlert, X } from "lucide-react";
 import { useEffect } from "react";
 
 import { useAppStore } from "@/lib/store";
-import type { AppNotification } from "@/lib/notifications";
+import {
+  getNotificationDismissDelay,
+  type AppNotification
+} from "@/lib/notifications";
 
 const toneStyles: Record<AppNotification["tone"], string> = {
   info: "border-[rgba(15,139,141,0.25)] bg-white/90 text-ocean",
@@ -26,9 +29,11 @@ export function NotificationCenter() {
       return;
     }
 
-    const timers = notifications.map((notification) =>
-      window.setTimeout(() => dismissNotification(notification.id), 5200)
-    );
+    const now = Date.now();
+    const timers = notifications.map((notification) => {
+      const delay = getNotificationDismissDelay(notification, now);
+      return window.setTimeout(() => dismissNotification(notification.id), delay);
+    });
 
     return () => timers.forEach((timer) => window.clearTimeout(timer));
   }, [dismissNotification, notifications]);

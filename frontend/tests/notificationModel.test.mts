@@ -1,7 +1,12 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { createNotification, dismissNotification } from "../src/lib/notifications.ts";
+import {
+  NOTIFICATION_AUTO_DISMISS_MS,
+  createNotification,
+  dismissNotification,
+  getNotificationDismissDelay
+} from "../src/lib/notifications.ts";
 
 test("createNotification fills deterministic metadata", () => {
   const notification = createNotification(
@@ -36,4 +41,15 @@ test("dismissNotification removes only the matching notification", () => {
     dismissNotification(notifications, "b").map((notification) => notification.id),
     ["a", "c"]
   );
+});
+
+test("getNotificationDismissDelay keeps each notification on its own timer", () => {
+  const notification = createNotification(
+    { title: "A", tone: "info" },
+    { now: () => 1000, makeId: () => "a" }
+  );
+
+  assert.equal(getNotificationDismissDelay(notification, 1000), NOTIFICATION_AUTO_DISMISS_MS);
+  assert.equal(getNotificationDismissDelay(notification, 3600), 2600);
+  assert.equal(getNotificationDismissDelay(notification, 7000), 0);
 });
