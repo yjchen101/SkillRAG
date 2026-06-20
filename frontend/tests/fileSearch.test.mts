@@ -5,6 +5,7 @@ import {
   getFileFilterCountLabel,
   getFilePathChipTitle,
   getInspectorCurrentPathTitle,
+  getFileSearchClearTitle,
   getFileSearchEmptyMessage
 } from "../src/lib/fileSearch.ts";
 
@@ -43,6 +44,10 @@ test("getFilePathChipTitle explains the file chip action", () => {
     getFilePathChipTitle("skills/rag-skill/SKILL.md"),
     "打开文件：skills/rag-skill/SKILL.md"
   );
+});
+
+test("getFileSearchClearTitle explains the clear filter action", () => {
+  assert.equal(getFileSearchClearTitle(), "清空文件搜索条件");
 });
 
 test("getInspectorCurrentPathTitle explains the active file", () => {

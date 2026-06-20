@@ -6,6 +6,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 
 import {
   getFileFilterCountLabel,
+  getFileSearchClearTitle,
   getFilePathChipTitle,
   getInspectorCurrentPathTitle,
   getFileSearchEmptyMessage
@@ -160,7 +161,7 @@ export function InspectorPanel() {
           <button
             className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white/70 text-[var(--color-ink-soft)] transition hover:text-[var(--color-ink)]"
             onClick={() => setFileFilter("")}
-            title="清空文件搜索"
+            title={getFileSearchClearTitle()}
             type="button"
           >
             <X size={14} />

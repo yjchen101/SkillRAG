@@ -35,6 +35,10 @@ export function getFilePathChipTitle(path: string) {
   return `打开文件：${path}`;
 }
 
+export function getFileSearchClearTitle() {
+  return "清空文件搜索条件";
+}
+
 export function getInspectorCurrentPathTitle(path: string) {
   return `当前文件：${path}`;
 }
