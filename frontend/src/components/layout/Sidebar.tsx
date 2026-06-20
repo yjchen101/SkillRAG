@@ -8,7 +8,10 @@ import { getMessagePreview } from "@/lib/messagePreview";
 import { formatRelativeTime } from "@/lib/relativeTime";
 import { getSessionActionState } from "@/lib/sessionActions";
 import { shouldDisableSessionRenameSave, shouldSubmitSessionRename } from "@/lib/sessionRename";
-import { getSessionSearchEmptyMessage } from "@/lib/sessionSearch";
+import {
+  getSessionFilterCountLabel,
+  getSessionSearchEmptyMessage
+} from "@/lib/sessionSearch";
 import { useAppStore } from "@/lib/store";
 
 export function Sidebar() {
@@ -37,6 +40,11 @@ export function Sidebar() {
 
     return sessions.filter((session) => session.title.toLowerCase().includes(query));
   }, [sessionFilter, sessions]);
+  const sessionFilterCountLabel = getSessionFilterCountLabel({
+    filteredCount: filteredSessions.length,
+    totalCount: sessions.length,
+    query: sessionFilter
+  });
   const sessionActionState = getSessionActionState({
     isStreaming,
     isInitializing,
@@ -149,6 +157,9 @@ export function Sidebar() {
           </button>
         )}
       </label>
+      <div className="mb-3 px-1 text-xs text-[var(--color-ink-soft)]">
+        {sessionFilterCountLabel}
+      </div>
       {sessionActionState.reason && (
         <div className="mb-3 rounded-2xl border border-[rgba(212,106,74,0.22)] bg-[rgba(212,106,74,0.1)] px-3 py-2 text-sm text-[var(--color-ember)]">
           {sessionActionState.reason}

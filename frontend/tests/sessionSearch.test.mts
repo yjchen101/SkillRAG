@@ -1,7 +1,10 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { getSessionSearchEmptyMessage } from "../src/lib/sessionSearch.ts";
+import {
+  getSessionFilterCountLabel,
+  getSessionSearchEmptyMessage
+} from "../src/lib/sessionSearch.ts";
 
 test("getSessionSearchEmptyMessage shows a generic empty state without query", () => {
   assert.equal(getSessionSearchEmptyMessage(""), "没有匹配的会话");
@@ -10,4 +13,15 @@ test("getSessionSearchEmptyMessage shows a generic empty state without query", (
 
 test("getSessionSearchEmptyMessage includes the trimmed query", () => {
   assert.equal(getSessionSearchEmptyMessage("  report  "), "没有匹配「report」的会话");
+});
+
+test("getSessionFilterCountLabel reports filtered session totals", () => {
+  assert.equal(
+    getSessionFilterCountLabel({ filteredCount: 2, totalCount: 8, query: "  report  " }),
+    "匹配 2 / 8 个会话"
+  );
+  assert.equal(
+    getSessionFilterCountLabel({ filteredCount: 8, totalCount: 8, query: "" }),
+    "共 8 个会话"
+  );
 });
