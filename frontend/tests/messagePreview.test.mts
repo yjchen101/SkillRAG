@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { getMessagePreview } from "../src/lib/messagePreview.ts";
+import { getMessagePreview, getRawMessageIndexLabel } from "../src/lib/messagePreview.ts";
 
 test("getMessagePreview shows streaming placeholder for empty assistant messages", () => {
   assert.equal(
@@ -33,4 +33,9 @@ test("getMessagePreview truncates long visible content", () => {
     }),
     "abc..."
   );
+});
+
+test("getRawMessageIndexLabel marks the latest raw message", () => {
+  assert.equal(getRawMessageIndexLabel({ index: 0, total: 3 }), "#1");
+  assert.equal(getRawMessageIndexLabel({ index: 2, total: 3 }), "#3 最新");
 });

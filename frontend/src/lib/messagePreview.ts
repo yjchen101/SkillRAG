@@ -17,3 +17,14 @@ export function getMessagePreview({
 
   return text.length > maxLength ? `${text.slice(0, maxLength)}...` : text;
 }
+
+export function getRawMessageIndexLabel({
+  index,
+  total
+}: {
+  index: number;
+  total: number;
+}) {
+  const label = `#${index + 1}`;
+  return index === total - 1 ? `${label} 最新` : label;
+}

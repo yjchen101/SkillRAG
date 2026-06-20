@@ -4,7 +4,7 @@ import { Check, MessageSquare, Pencil, Plus, Search, Trash2, X } from "lucide-re
 import { useEffect, useMemo, useState } from "react";
 
 import { hasActiveFilter } from "@/lib/filterControls";
-import { getMessagePreview } from "@/lib/messagePreview";
+import { getMessagePreview, getRawMessageIndexLabel } from "@/lib/messagePreview";
 import { formatRelativeTime } from "@/lib/relativeTime";
 import { getSessionActionState } from "@/lib/sessionActions";
 import { shouldDisableSessionRenameSave, shouldSubmitSessionRename } from "@/lib/sessionRename";
@@ -274,13 +274,15 @@ export function Sidebar() {
           Raw Messages
         </p>
         <div className="mt-3 space-y-3 overflow-y-auto pr-1">
-          {messages.map((message) => (
+          {messages.map((message, index) => (
             <div
               className="rounded-2xl border border-[var(--color-line)] bg-white/60 px-3 py-2"
               key={message.id}
             >
               <div className="mb-1 flex items-center justify-between text-xs uppercase tracking-[0.2em] text-[var(--color-ink-soft)]">
-                <span>{message.role}</span>
+                <span>
+                  {getRawMessageIndexLabel({ index, total: messages.length })} · {message.role}
+                </span>
                 <span>{message.toolCalls.length} tools</span>
               </div>
               <p className="break-words text-sm text-[var(--color-ink-soft)]">
