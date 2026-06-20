@@ -3,6 +3,7 @@ import test from "node:test";
 
 import {
   getCompressionEventCountLabel,
+  getCompressionRepairLabel,
   getCompressionReasonLabel,
   getCompressionTimestampLabel,
   getCompressionSavingsLabel
@@ -51,4 +52,8 @@ test("getCompressionReasonLabel localizes known and empty reasons", () => {
 
 test("getCompressionTimestampLabel explains missing timestamps", () => {
   assert.equal(getCompressionTimestampLabel(0), "未知时间");
+});
+
+test("getCompressionRepairLabel explains degraded repaired summaries", () => {
+  assert.equal(getCompressionRepairLabel(), "已修复摘要");
 });

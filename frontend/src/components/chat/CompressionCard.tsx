@@ -7,6 +7,7 @@ import remarkGfm from "remark-gfm";
 import type { CompressionEvent } from "@/lib/api";
 import {
   getCompressionEventCountLabel,
+  getCompressionRepairLabel,
   getCompressionReasonLabel,
   getCompressionTimestampLabel,
   getCompressionSavingsLabel
@@ -44,7 +45,7 @@ export function CompressionCard({ events }: { events: CompressionEvent[] }) {
               {event.degraded ? (
                 <span className="inline-flex items-center gap-1 rounded-full bg-[rgba(212,106,74,0.12)] px-2 py-1 text-[11px] font-medium text-[var(--color-ember)]">
                   <TriangleAlert size={12} />
-                  repaired summary
+                  {getCompressionRepairLabel()}
                 </span>
               ) : null}
               <span className="mono text-xs text-[var(--color-ink-soft)]">

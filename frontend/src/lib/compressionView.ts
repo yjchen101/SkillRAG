@@ -42,3 +42,7 @@ export function getCompressionTimestampLabel(timestamp: number) {
     minute: "2-digit"
   });
 }
+
+export function getCompressionRepairLabel() {
+  return "已修复摘要";
+}
