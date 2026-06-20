@@ -20,7 +20,7 @@ test("getTokenStatsView summarizes total and token split", () => {
     }),
     {
       label: "500 个 token",
-      title: "总计 500 · 系统 120 · 压缩上下文 80 · 消息 300"
+      title: "总计 500 个 token · 系统 120 个 · 压缩上下文 80 个 · 消息 300 个"
     }
   );
 });
