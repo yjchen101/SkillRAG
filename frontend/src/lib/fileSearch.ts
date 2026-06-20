@@ -20,3 +20,7 @@ export function getFileFilterCountLabel({
 export function getFilePathChipTitle(path: string) {
   return `打开文件：${path}`;
 }
+
+export function getInspectorCurrentPathTitle(path: string) {
+  return `当前文件：${path}`;
+}

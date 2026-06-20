@@ -4,6 +4,7 @@ import test from "node:test";
 import {
   getFileFilterCountLabel,
   getFilePathChipTitle,
+  getInspectorCurrentPathTitle,
   getFileSearchEmptyMessage
 } from "../src/lib/fileSearch.ts";
 
@@ -31,5 +32,12 @@ test("getFilePathChipTitle explains the file chip action", () => {
   assert.equal(
     getFilePathChipTitle("skills/rag-skill/SKILL.md"),
     "打开文件：skills/rag-skill/SKILL.md"
+  );
+});
+
+test("getInspectorCurrentPathTitle explains the active file", () => {
+  assert.equal(
+    getInspectorCurrentPathTitle("memory/MEMORY.md"),
+    "当前文件：memory/MEMORY.md"
   );
 });

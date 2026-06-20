@@ -7,6 +7,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   getFileFilterCountLabel,
   getFilePathChipTitle,
+  getInspectorCurrentPathTitle,
   getFileSearchEmptyMessage
 } from "@/lib/fileSearch";
 import { hasActiveFilter } from "@/lib/filterControls";
@@ -194,7 +195,9 @@ export function InspectorPanel() {
       </div>
 
       <div className="mb-2 flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-[var(--color-line)] bg-white/45 px-3 py-2 text-xs text-[var(--color-ink-soft)]">
-        <span className="break-all">{inspectorPath}</span>
+        <span className="break-all" title={getInspectorCurrentPathTitle(inspectorPath)}>
+          {inspectorPath}
+        </span>
         <div className="flex items-center gap-2">
           <span className="rounded-full bg-white/70 px-2 py-1">Cmd/Ctrl + S 保存</span>
           <span
