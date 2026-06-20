@@ -9,6 +9,7 @@ import { ChatMessage } from "@/components/chat/ChatMessage";
 import { isNearScrollBottom, shouldAutoScrollChat } from "@/lib/chatScroll";
 import { getStarterPromptCountLabel, getStarterPrompts } from "@/lib/starterPrompts";
 import { useAppStore } from "@/lib/store";
+import { getTokenStatsView } from "@/lib/tokenStatsView";
 
 export function ChatPanel() {
   const {
@@ -26,6 +27,7 @@ export function ChatPanel() {
   const [isAtBottom, setIsAtBottom] = useState(true);
   const starterPrompts = getStarterPrompts();
   const starterPromptCountLabel = getStarterPromptCountLabel(starterPrompts.length);
+  const tokenStatsView = getTokenStatsView(tokenStats);
   const inputDisabled = isStreaming || isInitializing || Boolean(workspaceError);
   const inputDisabledReason = isInitializing
     ? "正在连接后端"
@@ -72,8 +74,8 @@ export function ChatPanel() {
             实时对话与检索轨迹
           </h2>
         </div>
-        <div className="mono text-sm text-[var(--color-ink-soft)]">
-          {tokenStats ? `${tokenStats.total_tokens} tokens` : "No metrics yet"}
+        <div className="mono text-sm text-[var(--color-ink-soft)]" title={tokenStatsView.title}>
+          {tokenStatsView.label}
         </div>
       </div>
 
