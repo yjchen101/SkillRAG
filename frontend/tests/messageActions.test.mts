@@ -38,7 +38,7 @@ test("getCopyMessageTitle explains copy button state", () => {
 test("getCaptureMessageTitle explains capture button state", () => {
   assert.equal(
     getCaptureMessageTitle({ state: "idle", canCapture: true }),
-    "将这条回答保存为 knowledge Markdown 文件"
+    "将这条回答保存到 knowledge 目录"
   );
   assert.equal(getCaptureMessageTitle({ state: "saving", canCapture: true }), "正在沉淀为知识");
   assert.equal(getCaptureMessageTitle({ state: "saved", canCapture: true }), "已沉淀为知识");

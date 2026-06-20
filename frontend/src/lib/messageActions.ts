@@ -73,7 +73,7 @@ export function getCaptureMessageTitle({
     return "沉淀失败，请重试";
   }
 
-  return "将这条回答保存为 knowledge Markdown 文件";
+  return "将这条回答保存到 knowledge 目录";
 }
 
 export function shouldResetCopyState(state: CopyState) {
