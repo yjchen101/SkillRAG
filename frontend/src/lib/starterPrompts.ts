@@ -9,8 +9,8 @@ const STARTER_PROMPTS: StarterPrompt[] = [
   {
     id: "explain-system",
     title: "解释当前系统",
-    description: "从 Memory、Skills 和工作区提示开始梳理。",
-    prompt: "请基于当前 Memory、Skills 和 Workspace 文件，解释这个本地 Agent 工作台现在是如何工作的，并指出我可以从哪里开始调整。"
+    description: "从记忆、技能和工作区提示开始梳理。",
+    prompt: "请基于当前记忆、技能和工作区文件，解释这个本地 Agent 工作台现在是如何工作的，并指出我可以从哪里开始调整。"
   },
   {
     id: "inspect-knowledge",

@@ -25,6 +25,16 @@ test("getStarterPrompts includes system, knowledge, and session-oriented prompts
   );
 });
 
+test("getStarterPrompts uses localized workspace terms", () => {
+  const [systemPrompt] = getStarterPrompts();
+
+  assert.equal(systemPrompt.description, "从记忆、技能和工作区提示开始梳理。");
+  assert.equal(
+    systemPrompt.prompt,
+    "请基于当前记忆、技能和工作区文件，解释这个本地 Agent 工作台现在是如何工作的，并指出我可以从哪里开始调整。"
+  );
+});
+
 test("getStarterPromptCountLabel explains available starter actions", () => {
   assert.equal(getStarterPromptCountLabel(0), "暂无起步问题");
   assert.equal(getStarterPromptCountLabel(3), "3 个起步问题");
