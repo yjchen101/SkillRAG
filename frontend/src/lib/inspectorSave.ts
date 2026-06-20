@@ -21,11 +21,21 @@ export function getInspectorSaveTitle({
   isDirty: boolean;
   isSaving: boolean;
 }) {
-  if (isSaving) {
-    return `正在保存 ${path}`;
+  const target = path.trim();
+
+  if (!target) {
+    if (isSaving) {
+      return "正在保存当前文件";
+    }
+
+    return isDirty ? "保存当前文件" : "当前文件已同步";
   }
 
-  return isDirty ? `保存 ${path}` : `${path} 已同步`;
+  if (isSaving) {
+    return `正在保存 ${target}`;
+  }
+
+  return isDirty ? `保存 ${target}` : `${target} 已同步`;
 }
 
 export function shouldDisableInspectorSave({

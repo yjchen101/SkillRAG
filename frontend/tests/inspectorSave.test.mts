@@ -37,3 +37,18 @@ test("getInspectorSaveTitle explains save button state", () => {
     "正在保存 memory/MEMORY.md"
   );
 });
+
+test("getInspectorSaveTitle falls back when the file path is empty", () => {
+  assert.equal(
+    getInspectorSaveTitle({ path: "   ", isDirty: false, isSaving: false }),
+    "当前文件已同步"
+  );
+  assert.equal(
+    getInspectorSaveTitle({ path: "", isDirty: true, isSaving: false }),
+    "保存当前文件"
+  );
+  assert.equal(
+    getInspectorSaveTitle({ path: "", isDirty: true, isSaving: true }),
+    "正在保存当前文件"
+  );
+});
