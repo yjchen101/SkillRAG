@@ -4,7 +4,7 @@ import Editor from "@monaco-editor/react";
 import { Save, Search, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
-import { getFileSearchEmptyMessage } from "@/lib/fileSearch";
+import { getFileFilterCountLabel, getFileSearchEmptyMessage } from "@/lib/fileSearch";
 import { hasActiveFilter } from "@/lib/filterControls";
 import { getInspectorSaveLabel, shouldDisableInspectorSave } from "@/lib/inspectorSave";
 import { shouldConfirmInspectorSwitch } from "@/lib/inspectorSwitch";
@@ -42,6 +42,11 @@ export function InspectorPanel() {
 
     return editableFiles.filter((path) => path.toLowerCase().includes(query));
   }, [editableFiles, fileFilter]);
+  const fileFilterCountLabel = getFileFilterCountLabel({
+    filteredCount: filteredFiles.length,
+    totalCount: editableFiles.length,
+    query: fileFilter
+  });
 
   useEffect(() => {
     const handleBeforeUnload = (event: BeforeUnloadEvent) => {
@@ -147,6 +152,9 @@ export function InspectorPanel() {
           </button>
         )}
       </label>
+      <div className="mb-3 px-1 text-xs text-[var(--color-ink-soft)]">
+        {fileFilterCountLabel}
+      </div>
 
       <div className="mb-4 flex flex-wrap gap-2">
         {filteredFiles.map((path) => (
