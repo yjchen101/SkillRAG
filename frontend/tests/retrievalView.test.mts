@@ -1,7 +1,11 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { getEvidenceChannelLabel, summarizeRetrievalSteps } from "../src/lib/retrievalView.ts";
+import {
+  getEvidenceChannelLabel,
+  getRetrievalStageLabel,
+  summarizeRetrievalSteps
+} from "../src/lib/retrievalView.ts";
 
 test("summarizeRetrievalSteps counts stages and evidence", () => {
   const summary = summarizeRetrievalSteps([
@@ -113,4 +117,14 @@ test("getEvidenceChannelLabel maps evidence channels to Chinese labels", () => {
   assert.equal(getEvidenceChannelLabel("bm25"), "BM25 关键词检索");
   assert.equal(getEvidenceChannelLabel("fused"), "融合排序");
   assert.equal(getEvidenceChannelLabel("unknown"), "其他证据");
+});
+
+test("getRetrievalStageLabel maps retrieval stages to Chinese labels", () => {
+  assert.equal(getRetrievalStageLabel("memory"), "记忆");
+  assert.equal(getRetrievalStageLabel("skill"), "技能");
+  assert.equal(getRetrievalStageLabel("fallback"), "回退");
+  assert.equal(getRetrievalStageLabel("vector"), "向量");
+  assert.equal(getRetrievalStageLabel("bm25"), "BM25");
+  assert.equal(getRetrievalStageLabel("fused"), "融合");
+  assert.equal(getRetrievalStageLabel("unknown"), "检索");
 });

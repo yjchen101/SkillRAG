@@ -4,49 +4,46 @@ import { Database, FileSearch, Layers3, Search, Sparkles, type LucideIcon } from
 import { useState } from "react";
 
 import type { RetrievalStep } from "@/lib/api";
-import { getEvidenceChannelLabel, summarizeRetrievalSteps } from "@/lib/retrievalView";
+import {
+  getEvidenceChannelLabel,
+  getRetrievalStageLabel,
+  summarizeRetrievalSteps
+} from "@/lib/retrievalView";
 
 const STEP_META: Record<
   string,
   {
-    label: string;
     icon: LucideIcon;
     border: string;
     badge: string;
   }
 > = {
   memory: {
-    label: "Memory",
     icon: Database,
     border: "border-[rgba(15,139,141,0.16)] bg-[rgba(15,139,141,0.06)]",
     badge: "bg-[rgba(15,139,141,0.12)] text-ocean"
   },
   skill: {
-    label: "Skill",
     icon: Search,
     border: "border-[rgba(13,37,48,0.1)] bg-[rgba(13,37,48,0.04)]",
     badge: "bg-[rgba(13,37,48,0.08)] text-[var(--color-ink)]"
   },
   fallback: {
-    label: "Fallback",
     icon: Sparkles,
     border: "border-[rgba(212,106,74,0.18)] bg-[rgba(212,106,74,0.08)]",
     badge: "bg-[rgba(212,106,74,0.12)] text-[var(--color-ember)]"
   },
   vector: {
-    label: "Vector",
     icon: Database,
     border: "border-[rgba(15,139,141,0.16)] bg-[rgba(15,139,141,0.06)]",
     badge: "bg-[rgba(15,139,141,0.12)] text-ocean"
   },
   bm25: {
-    label: "BM25",
     icon: FileSearch,
     border: "border-[rgba(13,37,48,0.1)] bg-[rgba(13,37,48,0.04)]",
     badge: "bg-[rgba(13,37,48,0.08)] text-[var(--color-ink)]"
   },
   fused: {
-    label: "Fused",
     icon: Layers3,
     border: "border-[rgba(15,139,141,0.16)] bg-[rgba(15,139,141,0.06)]",
     badge: "bg-[rgba(15,139,141,0.12)] text-ocean"
@@ -95,7 +92,7 @@ export function RetrievalCard({ steps }: { steps: RetrievalStep[] }) {
               const meta = STEP_META[stage] ?? STEP_META.skill;
               return (
                 <span className={`rounded-full px-2 py-0.5 ${meta.badge}`} key={stage}>
-                  {meta.label} x {count}
+                  {getRetrievalStageLabel(stage)} x {count}
                 </span>
               );
             })}
@@ -121,7 +118,7 @@ export function RetrievalCard({ steps }: { steps: RetrievalStep[] }) {
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
                     <span className={`rounded-full px-2 py-1 text-[11px] font-medium ${meta.badge}`}>
-                      {meta.label}
+                      {getRetrievalStageLabel(step.stage)}
                     </span>
                     <div className="flex min-w-0 items-center gap-2 text-sm font-medium text-[var(--color-ink)]">
                       <Icon className="shrink-0" size={14} />

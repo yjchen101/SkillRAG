@@ -8,6 +8,15 @@ const EVIDENCE_CHANNEL_LABELS: Record<string, string> = {
   fused: "融合排序"
 };
 
+const RETRIEVAL_STAGE_LABELS: Record<string, string> = {
+  memory: "记忆",
+  skill: "技能",
+  fallback: "回退",
+  vector: "向量",
+  bm25: "BM25",
+  fused: "融合"
+};
+
 export type RetrievalSummary = {
   totalSteps: number;
   totalResults: number;
@@ -19,6 +28,10 @@ export type RetrievalSummary = {
 
 export function getEvidenceChannelLabel(channel: string) {
   return EVIDENCE_CHANNEL_LABELS[channel] ?? "其他证据";
+}
+
+export function getRetrievalStageLabel(stage: string) {
+  return RETRIEVAL_STAGE_LABELS[stage] ?? "检索";
 }
 
 export function summarizeRetrievalSteps(steps: RetrievalStep[]): RetrievalSummary {
