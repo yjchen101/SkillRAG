@@ -58,3 +58,7 @@ export function getCompressionBudgetTitle() {
 export function getCompressionWindowTitle() {
   return "窗口";
 }
+
+export function getCompressedMessageCountLabel(count: number) {
+  return `已压缩 ${count} 条消息`;
+}

@@ -6,6 +6,7 @@ import remarkGfm from "remark-gfm";
 
 import type { CompressionEvent } from "@/lib/api";
 import {
+  getCompressedMessageCountLabel,
   getCompressionBudgetTargetLabel,
   getCompressionBudgetTitle,
   getCompressionEventCountLabel,
@@ -79,7 +80,7 @@ export function CompressionCard({ events }: { events: CompressionEvent[] }) {
                   {getCompressionWindowTitle()}
                 </div>
                 <div className="text-sm text-[var(--color-ink)]">
-                  compressed {event.compressed_message_count} messages
+                  {getCompressedMessageCountLabel(event.compressed_message_count)}
                 </div>
                 <div className="mt-1 text-xs text-[var(--color-ink-soft)]">
                   kept {event.kept_recent_turn_count} recent turns

@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import {
+  getCompressedMessageCountLabel,
   getCompressionBudgetTitle,
   getCompressionBudgetTargetLabel,
   getCompressionEventCountLabel,
@@ -71,4 +72,8 @@ test("getCompressionBudgetTitle localizes the budget panel heading", () => {
 
 test("getCompressionWindowTitle localizes the window panel heading", () => {
   assert.equal(getCompressionWindowTitle(), "窗口");
+});
+
+test("getCompressedMessageCountLabel localizes compressed message counts", () => {
+  assert.equal(getCompressedMessageCountLabel(3), "已压缩 3 条消息");
 });
