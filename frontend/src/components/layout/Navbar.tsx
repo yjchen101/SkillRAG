@@ -3,6 +3,7 @@
 import { Database, FileSearch, Plus, Sparkles, Wrench } from "lucide-react";
 
 import { getKnowledgeIndexView } from "@/lib/knowledgeIndexView";
+import { getRagModeToggleTitle } from "@/lib/ragModeView";
 import { getSessionActionState } from "@/lib/sessionActions";
 import { useAppStore } from "@/lib/store";
 
@@ -25,6 +26,7 @@ export function Navbar() {
     sessions.find((session) => session.id === currentSessionId)?.title ?? "新会话";
   const isIndexBuilding = Boolean(knowledgeIndexStatus?.building);
   const knowledgeIndexView = getKnowledgeIndexView(knowledgeIndexStatus);
+  const ragModeTitle = getRagModeToggleTitle(ragMode);
   const sessionActionState = getSessionActionState({
     isStreaming,
     isInitializing,
@@ -71,6 +73,7 @@ export function Navbar() {
               : "border border-[var(--color-line)] bg-white/60 text-ink"
           }`}
           onClick={() => void toggleRagMode()}
+          title={ragModeTitle}
           type="button"
         >
           <Database size={16} />
