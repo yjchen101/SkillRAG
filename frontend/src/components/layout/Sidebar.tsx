@@ -19,6 +19,7 @@ import {
 import { shouldDisableSessionRenameSave, shouldSubmitSessionRename } from "@/lib/sessionRename";
 import {
   getSessionFilterCountLabel,
+  getSessionSearchClearTitle,
   getSessionSearchEmptyMessage
 } from "@/lib/sessionSearch";
 import { useAppStore } from "@/lib/store";
@@ -163,7 +164,7 @@ export function Sidebar() {
           <button
             className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white/70 text-[var(--color-ink-soft)] transition hover:text-[var(--color-ink)]"
             onClick={() => setSessionFilter("")}
-            title="清空会话搜索"
+            title={getSessionSearchClearTitle()}
             type="button"
           >
             <X size={14} />

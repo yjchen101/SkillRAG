@@ -3,6 +3,7 @@ import test from "node:test";
 
 import {
   getSessionFilterCountLabel,
+  getSessionSearchClearTitle,
   getSessionSearchEmptyMessage
 } from "../src/lib/sessionSearch.ts";
 
@@ -34,4 +35,8 @@ test("getSessionFilterCountLabel reports filtered session totals", () => {
     getSessionFilterCountLabel({ filteredCount: 8, totalCount: 8, query: "" }),
     "共 8 个会话"
   );
+});
+
+test("getSessionSearchClearTitle explains the clear filter action", () => {
+  assert.equal(getSessionSearchClearTitle(), "清空会话搜索条件");
 });

@@ -30,3 +30,7 @@ export function getSessionFilterCountLabel({
     ? `匹配 ${filteredCount} / ${totalCount} 个会话`
     : `共 ${totalCount} 个会话`;
 }
+
+export function getSessionSearchClearTitle() {
+  return "清空会话搜索条件";
+}
