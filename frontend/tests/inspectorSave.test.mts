@@ -3,6 +3,7 @@ import test from "node:test";
 
 import {
   getInspectorSaveLabel,
+  getInspectorSaveTitle,
   shouldDisableInspectorSave
 } from "../src/lib/inspectorSave.ts";
 
@@ -20,4 +21,19 @@ test("shouldDisableInspectorSave disables clean or saving states", () => {
   assert.equal(shouldDisableInspectorSave({ isDirty: false, isSaving: false }), true);
   assert.equal(shouldDisableInspectorSave({ isDirty: true, isSaving: true }), true);
   assert.equal(shouldDisableInspectorSave({ isDirty: true, isSaving: false }), false);
+});
+
+test("getInspectorSaveTitle explains save button state", () => {
+  assert.equal(
+    getInspectorSaveTitle({ path: "memory/MEMORY.md", isDirty: true, isSaving: false }),
+    "保存 memory/MEMORY.md"
+  );
+  assert.equal(
+    getInspectorSaveTitle({ path: "memory/MEMORY.md", isDirty: false, isSaving: false }),
+    "memory/MEMORY.md 已同步"
+  );
+  assert.equal(
+    getInspectorSaveTitle({ path: "memory/MEMORY.md", isDirty: true, isSaving: true }),
+    "正在保存 memory/MEMORY.md"
+  );
 });

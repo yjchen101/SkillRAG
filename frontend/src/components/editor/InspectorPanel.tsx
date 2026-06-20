@@ -6,7 +6,11 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { getFileFilterCountLabel, getFileSearchEmptyMessage } from "@/lib/fileSearch";
 import { hasActiveFilter } from "@/lib/filterControls";
-import { getInspectorSaveLabel, shouldDisableInspectorSave } from "@/lib/inspectorSave";
+import {
+  getInspectorSaveLabel,
+  getInspectorSaveTitle,
+  shouldDisableInspectorSave
+} from "@/lib/inspectorSave";
 import { shouldConfirmInspectorSwitch } from "@/lib/inspectorSwitch";
 import { isSaveShortcut } from "@/lib/keyboardShortcuts";
 import { useAppStore } from "@/lib/store";
@@ -30,6 +34,11 @@ export function InspectorPanel() {
     isSaving
   });
   const saveLabel = getInspectorSaveLabel({
+    isDirty: inspectorDirty,
+    isSaving
+  });
+  const saveTitle = getInspectorSaveTitle({
+    path: inspectorPath,
     isDirty: inspectorDirty,
     isSaving
   });
@@ -125,6 +134,7 @@ export function InspectorPanel() {
           className="flex items-center justify-center gap-2 rounded-full bg-[rgba(15,139,141,0.12)] px-4 py-2 text-sm text-ocean disabled:cursor-not-allowed disabled:text-[var(--color-ink-soft)]"
           disabled={saveDisabled}
           onClick={() => void handleSave()}
+          title={saveTitle}
           type="button"
         >
           <Save size={16} />
