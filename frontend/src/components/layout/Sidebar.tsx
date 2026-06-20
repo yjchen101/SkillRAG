@@ -13,6 +13,7 @@ import {
 } from "@/lib/messagePreview";
 import { formatRelativeTime } from "@/lib/relativeTime";
 import {
+  getSessionDeleteConfirmMessage,
   getSessionActionButtonTitle,
   getSessionActionState
 } from "@/lib/sessionActions";
@@ -124,7 +125,7 @@ export function Sidebar() {
       return;
     }
 
-    const confirmed = window.confirm(`删除会话「${title}」？此操作不可撤销。`);
+    const confirmed = window.confirm(getSessionDeleteConfirmMessage(title));
     if (!confirmed) {
       return;
     }

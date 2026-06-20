@@ -73,3 +73,12 @@ export function getNavbarNewSessionButtonTitle(state: SessionActionState) {
     state
   });
 }
+
+export function getSessionDeleteConfirmMessage(title: string) {
+  const trimmedTitle = title.trim();
+  if (!trimmedTitle) {
+    return "删除这个未命名会话？此操作不可撤销。";
+  }
+
+  return `删除会话「${trimmedTitle}」？此操作不可撤销。`;
+}

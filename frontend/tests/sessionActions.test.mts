@@ -4,6 +4,7 @@ import test from "node:test";
 import {
   getCompressionActionButtonTitle,
   getNavbarNewSessionButtonTitle,
+  getSessionDeleteConfirmMessage,
   getSessionActionButtonTitle,
   getSessionActionState
 } from "../src/lib/sessionActions.ts";
@@ -124,5 +125,16 @@ test("getCompressionActionButtonTitle explains compression availability", () => 
       reason: "当前没有可操作的会话"
     }),
     "当前没有可操作的会话"
+  );
+});
+
+test("getSessionDeleteConfirmMessage explains destructive deletion", () => {
+  assert.equal(
+    getSessionDeleteConfirmMessage("季度复盘"),
+    "删除会话「季度复盘」？此操作不可撤销。"
+  );
+  assert.equal(
+    getSessionDeleteConfirmMessage("   "),
+    "删除这个未命名会话？此操作不可撤销。"
   );
 });
