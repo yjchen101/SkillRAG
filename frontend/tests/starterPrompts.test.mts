@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { getStarterPrompts } from "../src/lib/starterPrompts.ts";
+import { getStarterPromptCountLabel, getStarterPrompts } from "../src/lib/starterPrompts.ts";
 
 test("getStarterPrompts exposes several actionable prompts", () => {
   const prompts = getStarterPrompts();
@@ -19,4 +19,8 @@ test("getStarterPrompts includes system, knowledge, and session-oriented prompts
     getStarterPrompts().map((prompt) => prompt.id),
     ["explain-system", "inspect-knowledge", "summarize-session"]
   );
+});
+
+test("getStarterPromptCountLabel explains available starter actions", () => {
+  assert.equal(getStarterPromptCountLabel(3), "3 个起步问题");
 });

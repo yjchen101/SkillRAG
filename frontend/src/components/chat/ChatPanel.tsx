@@ -7,7 +7,7 @@ import { CompressionCard } from "@/components/chat/CompressionCard";
 import { ChatInput } from "@/components/chat/ChatInput";
 import { ChatMessage } from "@/components/chat/ChatMessage";
 import { isNearScrollBottom, shouldAutoScrollChat } from "@/lib/chatScroll";
-import { getStarterPrompts } from "@/lib/starterPrompts";
+import { getStarterPromptCountLabel, getStarterPrompts } from "@/lib/starterPrompts";
 import { useAppStore } from "@/lib/store";
 
 export function ChatPanel() {
@@ -25,6 +25,7 @@ export function ChatPanel() {
   const endRef = useRef<HTMLDivElement | null>(null);
   const [isAtBottom, setIsAtBottom] = useState(true);
   const starterPrompts = getStarterPrompts();
+  const starterPromptCountLabel = getStarterPromptCountLabel(starterPrompts.length);
   const inputDisabled = isStreaming || isInitializing || Boolean(workspaceError);
 
   useEffect(() => {
@@ -89,6 +90,9 @@ export function ChatPanel() {
                 你可以直接提问，也可以在右侧编辑 Memory、Skills 和 Workspace
                 文件。所有系统提示、会话和工具执行都可以追踪。
               </p>
+              <div className="mt-4 inline-flex rounded-full bg-white/70 px-3 py-1 text-xs text-[var(--color-ink-soft)]">
+                {starterPromptCountLabel}
+              </div>
               <div className="mt-6 grid gap-3 lg:grid-cols-3">
                 {starterPrompts.map((starter) => (
                   <button

@@ -29,3 +29,7 @@ const STARTER_PROMPTS: StarterPrompt[] = [
 export function getStarterPrompts() {
   return STARTER_PROMPTS;
 }
+
+export function getStarterPromptCountLabel(count: number) {
+  return `${count} 个起步问题`;
+}
