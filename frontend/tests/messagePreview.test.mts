@@ -5,6 +5,7 @@ import {
   getMessagePreview,
   getRawMessageEmptyText,
   getRawMessageIndexLabel,
+  getRawMessageRoleLabel,
   getRawMessageToolLabel
 } from "../src/lib/messagePreview.ts";
 
@@ -48,6 +49,11 @@ test("getRawMessageIndexLabel marks the latest raw message", () => {
 test("getRawMessageToolLabel describes tool usage in Chinese", () => {
   assert.equal(getRawMessageToolLabel(0), "无工具");
   assert.equal(getRawMessageToolLabel(2), "2 个工具");
+});
+
+test("getRawMessageRoleLabel localizes raw message roles", () => {
+  assert.equal(getRawMessageRoleLabel("user"), "用户");
+  assert.equal(getRawMessageRoleLabel("assistant"), "助手");
 });
 
 test("getRawMessageEmptyText explains when raw messages appear", () => {

@@ -33,6 +33,10 @@ export function getRawMessageToolLabel(toolCount: number) {
   return toolCount > 0 ? `${toolCount} 个工具` : "无工具";
 }
 
+export function getRawMessageRoleLabel(role: "user" | "assistant") {
+  return role === "user" ? "用户" : "助手";
+}
+
 export function getRawMessageEmptyText() {
   return "当前会话还没有消息，发送后会在这里显示原始消息";
 }

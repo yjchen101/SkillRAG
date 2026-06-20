@@ -8,6 +8,7 @@ import {
   getMessagePreview,
   getRawMessageEmptyText,
   getRawMessageIndexLabel,
+  getRawMessageRoleLabel,
   getRawMessageToolLabel
 } from "@/lib/messagePreview";
 import { formatRelativeTime } from "@/lib/relativeTime";
@@ -308,7 +309,8 @@ export function Sidebar() {
             >
               <div className="mb-1 flex items-center justify-between text-xs uppercase tracking-[0.2em] text-[var(--color-ink-soft)]">
                 <span>
-                  {getRawMessageIndexLabel({ index, total: messages.length })} · {message.role}
+                  {getRawMessageIndexLabel({ index, total: messages.length })} ·{" "}
+                  {getRawMessageRoleLabel(message.role)}
                 </span>
                 <span>{getRawMessageToolLabel(message.toolCalls.length)}</span>
               </div>
