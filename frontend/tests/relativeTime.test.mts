@@ -21,3 +21,10 @@ test("formatRelativeTime reports minute-level age", () => {
 test("formatRelativeTime clarifies future timestamps", () => {
   assert.equal(formatRelativeTime(NOW_SECONDS + 60, NOW_MS), "时间未到");
 });
+
+test("formatRelativeTime keeps the year for older timestamps from another year", () => {
+  const oldTimestamp = Date.UTC(2023, 5, 15, 4, 30) / 1000;
+  const currentNow = Date.UTC(2024, 5, 15, 4, 30);
+
+  assert.match(formatRelativeTime(oldTimestamp, currentNow), /2023/);
+});

@@ -32,10 +32,15 @@ export function formatRelativeTime(timestamp: number, now = Date.now()): string 
     return `${Math.floor(diffMs / day)} 天前`;
   }
 
+  const date = new Date(timestamp * 1000);
+  const nowDate = new Date(now);
+  const includeYear = date.getFullYear() !== nowDate.getFullYear();
+
   return new Intl.DateTimeFormat("zh-CN", {
+    ...(includeYear ? { year: "numeric" } : {}),
     month: "short",
     day: "numeric",
     hour: "2-digit",
     minute: "2-digit"
-  }).format(new Date(timestamp * 1000));
+  }).format(date);
 }
