@@ -5,6 +5,7 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
 import type { CompressionEvent } from "@/lib/api";
+import { getCompressionSavingsLabel } from "@/lib/compressionView";
 
 function formatTimestamp(timestamp: number) {
   if (!timestamp) {
@@ -73,7 +74,11 @@ export function CompressionCard({ events }: { events: CompressionEvent[] }) {
                   {event.pre_compress_tokens} → {event.post_compress_tokens}
                 </div>
                 <div className="mt-1 text-xs text-[var(--color-ink-soft)]">
-                  target {event.target_budget_tokens}
+                  target {event.target_budget_tokens} ·{" "}
+                  {getCompressionSavingsLabel({
+                    preCompressTokens: event.pre_compress_tokens,
+                    postCompressTokens: event.post_compress_tokens
+                  })}
                 </div>
               </div>
 
