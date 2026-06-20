@@ -112,5 +112,5 @@ test("getEvidenceChannelLabel maps evidence channels to Chinese labels", () => {
   assert.equal(getEvidenceChannelLabel("vector"), "向量");
   assert.equal(getEvidenceChannelLabel("bm25"), "BM25");
   assert.equal(getEvidenceChannelLabel("fused"), "融合");
-  assert.equal(getEvidenceChannelLabel("unknown"), "证据");
+  assert.equal(getEvidenceChannelLabel("unknown"), "其他证据");
 });

@@ -18,7 +18,7 @@ export type RetrievalSummary = {
 };
 
 export function getEvidenceChannelLabel(channel: string) {
-  return EVIDENCE_CHANNEL_LABELS[channel] ?? "证据";
+  return EVIDENCE_CHANNEL_LABELS[channel] ?? "其他证据";
 }
 
 export function summarizeRetrievalSteps(steps: RetrievalStep[]): RetrievalSummary {
