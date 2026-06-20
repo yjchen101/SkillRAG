@@ -24,7 +24,7 @@ export function getWorkspaceStatusView(state: WorkspaceStatusState): WorkspaceSt
     return {
       kind: "error",
       title: "后端连接失败",
-      message: state.error
+      message: `初始化失败：${state.error}`
     };
   }
 

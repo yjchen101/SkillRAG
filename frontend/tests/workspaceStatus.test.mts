@@ -15,7 +15,7 @@ test("getWorkspaceStatusView returns retryable error copy when initialization fa
   assert.deepEqual(getWorkspaceStatusView({ isInitializing: false, error: "fetch failed" }), {
     kind: "error",
     title: "后端连接失败",
-    message: "fetch failed"
+    message: "初始化失败：fetch failed"
   });
 });
 
