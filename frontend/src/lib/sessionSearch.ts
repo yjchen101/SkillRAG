@@ -34,3 +34,10 @@ export function getSessionFilterCountLabel({
 export function getSessionSearchClearTitle() {
   return "清空会话搜索条件";
 }
+
+export function getSidebarSectionLabels() {
+  return {
+    sessions: "会话",
+    rawMessages: "原始消息"
+  };
+}

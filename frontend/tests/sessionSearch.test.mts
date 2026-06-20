@@ -4,7 +4,8 @@ import test from "node:test";
 import {
   getSessionFilterCountLabel,
   getSessionSearchClearTitle,
-  getSessionSearchEmptyMessage
+  getSessionSearchEmptyMessage,
+  getSidebarSectionLabels
 } from "../src/lib/sessionSearch.ts";
 
 test("getSessionSearchEmptyMessage shows a generic empty state without query", () => {
@@ -39,4 +40,11 @@ test("getSessionFilterCountLabel reports filtered session totals", () => {
 
 test("getSessionSearchClearTitle explains the clear filter action", () => {
   assert.equal(getSessionSearchClearTitle(), "清空会话搜索条件");
+});
+
+test("getSidebarSectionLabels localizes visible sidebar labels", () => {
+  assert.deepEqual(getSidebarSectionLabels(), {
+    sessions: "会话",
+    rawMessages: "原始消息"
+  });
 });

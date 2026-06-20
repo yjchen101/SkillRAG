@@ -25,7 +25,8 @@ import {
 import {
   getSessionFilterCountLabel,
   getSessionSearchClearTitle,
-  getSessionSearchEmptyMessage
+  getSessionSearchEmptyMessage,
+  getSidebarSectionLabels
 } from "@/lib/sessionSearch";
 import { useAppStore } from "@/lib/store";
 
@@ -46,6 +47,7 @@ export function Sidebar() {
   const [draftTitle, setDraftTitle] = useState("");
   const [sessionFilter, setSessionFilter] = useState("");
   const hasSessionFilter = hasActiveFilter(sessionFilter);
+  const sidebarSectionLabels = getSidebarSectionLabels();
 
   const filteredSessions = useMemo(() => {
     const query = sessionFilter.trim().toLowerCase();
@@ -138,7 +140,7 @@ export function Sidebar() {
       <div className="mb-4 flex items-center justify-between">
         <div className="min-w-0">
           <p className="text-xs uppercase tracking-[0.28em] text-[var(--color-ink-soft)]">
-            Sessions
+            {sidebarSectionLabels.sessions}
           </p>
           <h2 className="text-lg font-semibold tracking-[-0.04em]">会话与原始消息</h2>
         </div>
@@ -309,7 +311,7 @@ export function Sidebar() {
 
       <div className="mt-4 flex min-h-0 flex-1 flex-col rounded-[24px] border border-[var(--color-line)] bg-white/40 p-3">
         <p className="text-xs uppercase tracking-[0.28em] text-[var(--color-ink-soft)]">
-          Raw Messages
+          {sidebarSectionLabels.rawMessages}
         </p>
         <div className="mt-3 space-y-3 overflow-y-auto pr-1">
           {messages.map((message, index) => (
