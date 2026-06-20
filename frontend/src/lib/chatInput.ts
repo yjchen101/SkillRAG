@@ -23,6 +23,26 @@ export function getChatInputCountLabel(value: string) {
   return `${value.length} 字`;
 }
 
+export function getChatInputSendTitle({
+  disabled,
+  disabledReason,
+  value
+}: {
+  disabled: boolean;
+  disabledReason?: string;
+  value: string;
+}) {
+  if (disabled) {
+    return disabledReason ?? "正在生成回复";
+  }
+
+  if (!value.trim()) {
+    return "输入内容后发送";
+  }
+
+  return "发送消息";
+}
+
 export function shouldShowChatInputClear(value: string, disabled: boolean) {
   return !disabled && value.length > 0;
 }

@@ -6,6 +6,7 @@ import {
   CHAT_INPUT_MIN_HEIGHT,
   getChatInputCountLabel,
   getChatInputHeight,
+  getChatInputSendTitle,
   shouldShowChatInputClear,
   shouldRefocusChatInputAfterSend
 } from "../src/lib/chatInput.ts";
@@ -54,5 +55,24 @@ test("shouldRefocusChatInputAfterSend only accepts submitted enabled input", () 
   assert.equal(
     shouldRefocusChatInputAfterSend({ disabled: true, submittedValue: "hello" }),
     false
+  );
+});
+
+test("getChatInputSendTitle explains why sending is unavailable", () => {
+  assert.equal(
+    getChatInputSendTitle({ disabled: false, value: "" }),
+    "输入内容后发送"
+  );
+  assert.equal(
+    getChatInputSendTitle({ disabled: false, value: "  hi  " }),
+    "发送消息"
+  );
+  assert.equal(
+    getChatInputSendTitle({
+      disabled: true,
+      disabledReason: "正在连接后端",
+      value: "hi"
+    }),
+    "正在连接后端"
   );
 });

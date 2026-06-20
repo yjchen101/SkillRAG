@@ -27,6 +27,13 @@ export function ChatPanel() {
   const starterPrompts = getStarterPrompts();
   const starterPromptCountLabel = getStarterPromptCountLabel(starterPrompts.length);
   const inputDisabled = isStreaming || isInitializing || Boolean(workspaceError);
+  const inputDisabledReason = isInitializing
+    ? "正在连接后端"
+    : workspaceError
+      ? "后端连接失败"
+      : isStreaming
+        ? "正在接收流式回复"
+        : undefined;
 
   useEffect(() => {
     if (shouldAutoScrollChat(isAtBottom)) {
@@ -143,6 +150,7 @@ export function ChatPanel() {
 
       <ChatInput
         disabled={inputDisabled}
+        disabledReason={inputDisabledReason}
         onSend={sendMessage}
         placeholder={
           isInitializing
