@@ -32,7 +32,8 @@ export function getFileFilterCountLabel({
 }
 
 export function getFilePathChipTitle(path: string) {
-  return `打开文件：${path}`;
+  const trimmedPath = path.trim();
+  return trimmedPath ? `打开文件：${trimmedPath}` : "打开当前文件";
 }
 
 export function getFileSearchClearTitle() {

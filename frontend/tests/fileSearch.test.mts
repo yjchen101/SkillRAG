@@ -47,6 +47,10 @@ test("getFilePathChipTitle explains the file chip action", () => {
   );
 });
 
+test("getFilePathChipTitle falls back when the file path is empty", () => {
+  assert.equal(getFilePathChipTitle("   "), "打开当前文件");
+});
+
 test("getFileSearchClearTitle explains the clear filter action", () => {
   assert.equal(getFileSearchClearTitle(), "清空文件搜索条件");
 });
