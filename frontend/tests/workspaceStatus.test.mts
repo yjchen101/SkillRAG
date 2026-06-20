@@ -6,7 +6,7 @@ import { getWorkspaceRetryLabel, getWorkspaceStatusView } from "../src/lib/works
 test("getWorkspaceStatusView returns loading copy while initializing", () => {
   assert.deepEqual(getWorkspaceStatusView({ isInitializing: true, error: null }), {
     kind: "loading",
-    title: "正在连接后端",
+    title: "正在连接工作台",
     message: "正在加载会话、技能、知识索引和工作区文件。"
   });
 });
@@ -14,7 +14,7 @@ test("getWorkspaceStatusView returns loading copy while initializing", () => {
 test("getWorkspaceStatusView returns retryable error copy when initialization fails", () => {
   assert.deepEqual(getWorkspaceStatusView({ isInitializing: false, error: "fetch failed" }), {
     kind: "error",
-    title: "后端连接失败",
+    title: "工作台连接失败",
     message: "初始化失败：fetch failed"
   });
 });
