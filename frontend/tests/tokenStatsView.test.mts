@@ -19,7 +19,7 @@ test("getTokenStatsView summarizes total and token split", () => {
       total_tokens: 500
     }),
     {
-      label: "500 tokens",
+      label: "500 个 token",
       title: "总计 500 · 系统 120 · 压缩上下文 80 · 消息 300"
     }
   );

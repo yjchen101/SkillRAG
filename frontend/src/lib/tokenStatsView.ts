@@ -14,7 +14,7 @@ export function getTokenStatsView(stats: TokenStatsViewInput | null) {
   }
 
   return {
-    label: `${stats.total_tokens} tokens`,
+    label: `${stats.total_tokens} 个 token`,
     title: `总计 ${stats.total_tokens} · 系统 ${stats.system_tokens} · 压缩上下文 ${stats.compressed_context_tokens} · 消息 ${stats.message_tokens}`
   };
 }
