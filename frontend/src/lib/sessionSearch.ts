@@ -10,7 +10,7 @@ export function getSessionSearchEmptyMessage({
     return `没有匹配「${trimmedQuery}」的会话`;
   }
 
-  return totalCount === 0 ? "还没有会话，先新建一个" : "没有匹配的会话";
+  return totalCount === 0 ? "还没有会话，点击新建开始" : "没有匹配的会话";
 }
 
 export function getSessionFilterCountLabel({

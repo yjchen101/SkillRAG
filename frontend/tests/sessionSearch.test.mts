@@ -7,7 +7,10 @@ import {
 } from "../src/lib/sessionSearch.ts";
 
 test("getSessionSearchEmptyMessage shows a generic empty state without query", () => {
-  assert.equal(getSessionSearchEmptyMessage({ query: "", totalCount: 0 }), "还没有会话，先新建一个");
+  assert.equal(
+    getSessionSearchEmptyMessage({ query: "", totalCount: 0 }),
+    "还没有会话，点击新建开始"
+  );
   assert.equal(getSessionSearchEmptyMessage({ query: "   ", totalCount: 2 }), "没有匹配的会话");
 });
 
