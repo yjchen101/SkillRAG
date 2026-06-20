@@ -84,6 +84,11 @@ export function RetrievalCard({ steps }: { steps: RetrievalStep[] }) {
                 已 fallback
               </span>
             )}
+            {summary.emptySteps > 0 && (
+              <span className="rounded-full bg-white/70 px-2 py-1 text-[11px] font-normal text-[var(--color-ink-soft)]">
+                {summary.emptySteps} 步无证据
+              </span>
+            )}
           </div>
           <div className="mt-1 flex flex-wrap items-center gap-2 text-xs font-normal text-[var(--color-ink-soft)]">
             {summary.stageCounts.map(([stage, count]) => {

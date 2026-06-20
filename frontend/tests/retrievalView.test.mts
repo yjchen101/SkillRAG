@@ -53,6 +53,7 @@ test("summarizeRetrievalSteps counts stages and evidence", () => {
   assert.deepEqual(summary, {
     totalSteps: 2,
     totalResults: 3,
+    emptySteps: 0,
     latestTitle: "Hybrid fallback",
     stageCounts: [
       ["memory", 1],
@@ -66,8 +67,41 @@ test("summarizeRetrievalSteps returns an empty summary for no steps", () => {
   assert.deepEqual(summarizeRetrievalSteps([]), {
     totalSteps: 0,
     totalResults: 0,
+    emptySteps: 0,
     latestTitle: "",
     stageCounts: [],
     usedFallback: false
   });
+});
+
+test("summarizeRetrievalSteps counts steps without evidence", () => {
+  const summary = summarizeRetrievalSteps([
+    {
+      kind: "knowledge",
+      stage: "skill",
+      title: "Skill check",
+      message: "No direct evidence",
+      results: []
+    },
+    {
+      kind: "knowledge",
+      stage: "vector",
+      title: "Vector hit",
+      message: "",
+      results: [
+        {
+          source_path: "knowledge/a.md",
+          source_type: "markdown",
+          locator: "",
+          snippet: "one",
+          channel: "vector",
+          score: 0.7,
+          parent_id: null
+        }
+      ]
+    }
+  ]);
+
+  assert.equal(summary.emptySteps, 1);
+  assert.equal(summary.totalResults, 1);
 });
