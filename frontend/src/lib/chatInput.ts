@@ -18,3 +18,7 @@ export function getChatInputHeight(
     overflowY: scrollHeight > maxHeight ? "auto" : "hidden"
   };
 }
+
+export function getChatInputCountLabel(value: string) {
+  return `${value.length} 字`;
+}

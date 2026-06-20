@@ -3,7 +3,7 @@
 import { SendHorizonal } from "lucide-react";
 import { useLayoutEffect, useRef, useState } from "react";
 
-import { getChatInputHeight } from "@/lib/chatInput";
+import { getChatInputCountLabel, getChatInputHeight } from "@/lib/chatInput";
 
 export function ChatInput({
   disabled,
@@ -16,6 +16,7 @@ export function ChatInput({
 }) {
   const [value, setValue] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+  const countLabel = getChatInputCountLabel(value);
 
   useLayoutEffect(() => {
     const textarea = textareaRef.current;
@@ -63,9 +64,12 @@ export function ChatInput({
         value={value}
       />
       <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <p className="text-sm leading-6 text-[var(--color-ink-soft)]">
-          {disabled ? "正在接收流式回复，完成后可继续追问。" : "支持工具调用、Memory 检索和多段响应。"}
-        </p>
+        <div className="flex flex-wrap items-center gap-2 text-sm leading-6 text-[var(--color-ink-soft)]">
+          <span>
+            {disabled ? "正在接收流式回复，完成后可继续追问。" : "支持工具调用、Memory 检索和多段响应。"}
+          </span>
+          <span className="rounded-full bg-white/60 px-2 py-0.5 text-xs">{countLabel}</span>
+        </div>
         <button
           className="flex items-center justify-center gap-2 rounded-full bg-ocean px-4 py-2 text-sm text-white disabled:cursor-not-allowed disabled:bg-[rgba(15,139,141,0.45)] sm:min-w-24"
           disabled={disabled || !value.trim()}

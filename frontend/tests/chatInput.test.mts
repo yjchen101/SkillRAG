@@ -4,6 +4,7 @@ import test from "node:test";
 import {
   CHAT_INPUT_MAX_HEIGHT,
   CHAT_INPUT_MIN_HEIGHT,
+  getChatInputCountLabel,
   getChatInputHeight
 } from "../src/lib/chatInput.ts";
 
@@ -26,4 +27,9 @@ test("getChatInputHeight caps tall content and enables scrolling", () => {
     height: CHAT_INPUT_MAX_HEIGHT,
     overflowY: "auto"
   });
+});
+
+test("getChatInputCountLabel reports raw input length", () => {
+  assert.equal(getChatInputCountLabel(""), "0 字");
+  assert.equal(getChatInputCountLabel("hello"), "5 字");
 });
