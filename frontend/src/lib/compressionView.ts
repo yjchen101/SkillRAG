@@ -46,3 +46,7 @@ export function getCompressionTimestampLabel(timestamp: number) {
 export function getCompressionRepairLabel() {
   return "已修复摘要";
 }
+
+export function getCompressionBudgetTargetLabel(targetBudgetTokens: number) {
+  return `目标 ${targetBudgetTokens} tokens`;
+}

@@ -6,6 +6,7 @@ import remarkGfm from "remark-gfm";
 
 import type { CompressionEvent } from "@/lib/api";
 import {
+  getCompressionBudgetTargetLabel,
   getCompressionEventCountLabel,
   getCompressionRepairLabel,
   getCompressionReasonLabel,
@@ -63,7 +64,7 @@ export function CompressionCard({ events }: { events: CompressionEvent[] }) {
                   {event.pre_compress_tokens} → {event.post_compress_tokens}
                 </div>
                 <div className="mt-1 text-xs text-[var(--color-ink-soft)]">
-                  target {event.target_budget_tokens} ·{" "}
+                  {getCompressionBudgetTargetLabel(event.target_budget_tokens)} ·{" "}
                   {getCompressionSavingsLabel({
                     preCompressTokens: event.pre_compress_tokens,
                     postCompressTokens: event.post_compress_tokens

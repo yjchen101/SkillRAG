@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import {
+  getCompressionBudgetTargetLabel,
   getCompressionEventCountLabel,
   getCompressionRepairLabel,
   getCompressionReasonLabel,
@@ -56,4 +57,8 @@ test("getCompressionTimestampLabel explains missing timestamps", () => {
 
 test("getCompressionRepairLabel explains degraded repaired summaries", () => {
   assert.equal(getCompressionRepairLabel(), "已修复摘要");
+});
+
+test("getCompressionBudgetTargetLabel localizes target token budgets", () => {
+  assert.equal(getCompressionBudgetTargetLabel(4096), "目标 4096 tokens");
 });
