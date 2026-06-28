@@ -15,6 +15,7 @@ import {
 import {
   getChatPanelIntroCopy,
   getChatPanelSectionLabels,
+  getStarterPromptActionTitle,
   getStarterPromptCountLabel,
   getStarterPrompts
 } from "@/lib/starterPrompts";
@@ -118,6 +119,11 @@ export function ChatPanel() {
                     disabled={inputDisabled}
                     key={starter.id}
                     onClick={() => void sendMessage(starter.prompt)}
+                    title={getStarterPromptActionTitle({
+                      disabled: inputDisabled,
+                      disabledReason: inputAvailabilityCopy.disabledReason,
+                      title: starter.title
+                    })}
                     type="button"
                   >
                     <div className="flex items-center gap-2 text-sm font-medium text-ocean">

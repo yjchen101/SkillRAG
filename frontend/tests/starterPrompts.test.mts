@@ -4,6 +4,7 @@ import test from "node:test";
 import {
   getChatPanelSectionLabels,
   getChatPanelIntroCopy,
+  getStarterPromptActionTitle,
   getStarterPromptCountLabel,
   getStarterPrompts
 } from "../src/lib/starterPrompts.ts";
@@ -39,6 +40,33 @@ test("getStarterPrompts uses localized workspace terms", () => {
 test("getStarterPromptCountLabel explains available starter actions", () => {
   assert.equal(getStarterPromptCountLabel(0), "暂无起步问题");
   assert.equal(getStarterPromptCountLabel(3), "3 个起步问题");
+});
+
+test("getStarterPromptActionTitle explains enabled and disabled starter actions", () => {
+  assert.equal(
+    getStarterPromptActionTitle({
+      disabled: false,
+      disabledReason: undefined,
+      title: "解释当前系统"
+    }),
+    "发送起步问题「解释当前系统」"
+  );
+  assert.equal(
+    getStarterPromptActionTitle({
+      disabled: true,
+      disabledReason: "工作台连接失败",
+      title: "检查知识库"
+    }),
+    "工作台连接失败"
+  );
+  assert.equal(
+    getStarterPromptActionTitle({
+      disabled: true,
+      disabledReason: undefined,
+      title: "总结会话"
+    }),
+    "工作台可用后再发送起步问题"
+  );
 });
 
 test("getChatPanelSectionLabels localizes visible panel labels", () => {

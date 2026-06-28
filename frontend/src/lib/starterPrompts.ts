@@ -38,6 +38,22 @@ export function getStarterPromptCountLabel(count: number) {
   return `${count} 个起步问题`;
 }
 
+export function getStarterPromptActionTitle({
+  disabled,
+  disabledReason,
+  title
+}: {
+  disabled: boolean;
+  disabledReason?: string;
+  title: string;
+}) {
+  if (disabled) {
+    return disabledReason ?? "工作台可用后再发送起步问题";
+  }
+
+  return `发送起步问题「${title.trim()}」`;
+}
+
 export function getChatPanelSectionLabels() {
   return {
     conversation: "对话",
