@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import {
+  getSessionRenameCancelTitle,
   getSessionRenameSaveTitle,
   shouldDisableSessionRenameSave,
   shouldSubmitSessionRename
@@ -67,4 +68,8 @@ test("getSessionRenameSaveTitle explains save availability", () => {
     getSessionRenameSaveTitle({ currentTitle: "现有标题", draftTitle: "新标题" }),
     "保存新的会话标题"
   );
+});
+
+test("getSessionRenameCancelTitle explains the cancel action", () => {
+  assert.equal(getSessionRenameCancelTitle(), "取消重命名并保留原标题");
 });

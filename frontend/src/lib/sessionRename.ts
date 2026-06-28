@@ -45,3 +45,7 @@ export function getSessionRenameSaveTitle({
 
   return "保存新的会话标题";
 }
+
+export function getSessionRenameCancelTitle() {
+  return "取消重命名并保留原标题";
+}

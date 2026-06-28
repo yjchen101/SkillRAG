@@ -18,6 +18,7 @@ import {
   getSessionActionState
 } from "@/lib/sessionActions";
 import {
+  getSessionRenameCancelTitle,
   getSessionRenameSaveTitle,
   shouldDisableSessionRenameSave,
   shouldSubmitSessionRename
@@ -235,6 +236,7 @@ export function Sidebar() {
                   <button
                     className="flex items-center gap-1 rounded-full border border-[var(--color-line)] bg-white/60 px-3 py-1.5 text-[var(--color-ink-soft)]"
                     onClick={cancelRename}
+                    title={getSessionRenameCancelTitle()}
                     type="button"
                   >
                     <X size={14} />
