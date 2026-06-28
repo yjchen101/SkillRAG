@@ -45,6 +45,11 @@ export function getInspectorCurrentPathTitle(path: string) {
   return trimmedPath ? `当前文件：${trimmedPath}` : "当前文件未选择";
 }
 
+export function getInspectorCurrentPathLabel(path: string) {
+  const trimmedPath = path.trim();
+  return trimmedPath || "未选择文件";
+}
+
 export function getInspectorSaveShortcutTitle() {
   return "按 Cmd 或 Ctrl + S 保存当前文件";
 }

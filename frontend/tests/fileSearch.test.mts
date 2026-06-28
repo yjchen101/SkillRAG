@@ -5,6 +5,7 @@ import {
   getFileFilterCountLabel,
   getFilePathChipTitle,
   getInspectorPanelLabels,
+  getInspectorCurrentPathLabel,
   getInspectorCurrentPathTitle,
   getInspectorSaveShortcutTitle,
   getFileSearchClearTitle,
@@ -65,6 +66,11 @@ test("getInspectorCurrentPathTitle explains the active file", () => {
 
 test("getInspectorCurrentPathTitle falls back when the active path is empty", () => {
   assert.equal(getInspectorCurrentPathTitle("   "), "当前文件未选择");
+});
+
+test("getInspectorCurrentPathLabel shows a visible fallback for empty paths", () => {
+  assert.equal(getInspectorCurrentPathLabel("memory/MEMORY.md"), "memory/MEMORY.md");
+  assert.equal(getInspectorCurrentPathLabel("   "), "未选择文件");
 });
 
 test("getInspectorSaveShortcutTitle explains the editor save shortcut", () => {

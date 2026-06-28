@@ -8,6 +8,7 @@ import {
   getFileFilterCountLabel,
   getFileSearchClearTitle,
   getFilePathChipTitle,
+  getInspectorCurrentPathLabel,
   getInspectorCurrentPathTitle,
   getInspectorPanelLabels,
   getInspectorSaveShortcutTitle,
@@ -209,7 +210,7 @@ export function InspectorPanel() {
 
       <div className="mb-2 flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-[var(--color-line)] bg-white/45 px-3 py-2 text-xs text-[var(--color-ink-soft)]">
         <span className="break-all" title={getInspectorCurrentPathTitle(inspectorPath)}>
-          {inspectorPath}
+          {getInspectorCurrentPathLabel(inspectorPath)}
         </span>
         <div className="flex items-center gap-2">
           <span
