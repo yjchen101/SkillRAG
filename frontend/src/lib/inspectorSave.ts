@@ -47,3 +47,7 @@ export function shouldDisableInspectorSave({
 }) {
   return isSaving || !isDirty;
 }
+
+export function getInspectorDirtyStatusTitle(isDirty: boolean) {
+  return isDirty ? "当前文件有未保存修改" : "当前文件已保存到磁盘";
+}

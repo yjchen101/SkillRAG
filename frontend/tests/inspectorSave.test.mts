@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import {
+  getInspectorDirtyStatusTitle,
   getInspectorSaveLabel,
   getInspectorSaveTitle,
   shouldDisableInspectorSave
@@ -51,4 +52,9 @@ test("getInspectorSaveTitle falls back when the file path is empty", () => {
     getInspectorSaveTitle({ path: "", isDirty: true, isSaving: true }),
     "正在保存当前文件"
   );
+});
+
+test("getInspectorDirtyStatusTitle explains the visible editor status", () => {
+  assert.equal(getInspectorDirtyStatusTitle(true), "当前文件有未保存修改");
+  assert.equal(getInspectorDirtyStatusTitle(false), "当前文件已保存到磁盘");
 });

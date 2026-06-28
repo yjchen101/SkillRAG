@@ -16,6 +16,7 @@ import {
 } from "@/lib/fileSearch";
 import { hasActiveFilter } from "@/lib/filterControls";
 import {
+  getInspectorDirtyStatusTitle,
   getInspectorSaveLabel,
   getInspectorSaveTitle,
   shouldDisableInspectorSave
@@ -225,6 +226,7 @@ export function InspectorPanel() {
                 ? "bg-[rgba(212,106,74,0.12)] text-[var(--color-ember)]"
                 : "bg-[rgba(15,139,141,0.12)] text-ocean"
             }`}
+            title={getInspectorDirtyStatusTitle(inspectorDirty)}
           >
             {inspectorDirty ? "未保存" : "已同步"}
           </span>
