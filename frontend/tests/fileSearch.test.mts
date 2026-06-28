@@ -9,6 +9,7 @@ import {
   getInspectorCurrentPathTitle,
   getInspectorSaveShortcutTitle,
   getFileSearchClearTitle,
+  getFileSearchInputTitle,
   getFileSearchEmptyMessage
 } from "../src/lib/fileSearch.ts";
 
@@ -55,6 +56,10 @@ test("getFilePathChipTitle falls back when the file path is empty", () => {
 
 test("getFileSearchClearTitle explains the clear filter action", () => {
   assert.equal(getFileSearchClearTitle(), "清空文件搜索条件");
+});
+
+test("getFileSearchInputTitle explains the search field", () => {
+  assert.equal(getFileSearchInputTitle(), "按文件路径筛选列表");
 });
 
 test("getInspectorCurrentPathTitle explains the active file", () => {

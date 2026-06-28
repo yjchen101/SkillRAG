@@ -40,6 +40,10 @@ export function getFileSearchClearTitle() {
   return "清空文件搜索条件";
 }
 
+export function getFileSearchInputTitle() {
+  return "按文件路径筛选列表";
+}
+
 export function getInspectorCurrentPathTitle(path: string) {
   const trimmedPath = path.trim();
   return trimmedPath ? `当前文件：${trimmedPath}` : "当前文件未选择";

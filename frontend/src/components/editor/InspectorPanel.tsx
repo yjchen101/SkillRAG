@@ -8,6 +8,7 @@ import {
   getFileFilterCountLabel,
   getFileSearchClearTitle,
   getFilePathChipTitle,
+  getFileSearchInputTitle,
   getInspectorCurrentPathLabel,
   getInspectorCurrentPathTitle,
   getInspectorPanelLabels,
@@ -165,6 +166,7 @@ export function InspectorPanel() {
           className="min-w-0 flex-1 bg-transparent text-[var(--color-ink)] outline-none placeholder:text-[var(--color-ink-soft)]"
           onChange={(event) => setFileFilter(event.target.value)}
           placeholder="搜索文件路径"
+          title={getFileSearchInputTitle()}
           type="search"
           value={fileFilter}
         />
