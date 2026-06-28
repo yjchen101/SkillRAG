@@ -112,6 +112,14 @@ test("getChatInputAvailabilityCopy explains workspace availability", () => {
 test("getChatInputHelperText explains enabled and disabled states", () => {
   assert.equal(getChatInputHelperText(false), "支持工具调用、记忆检索和多段响应。");
   assert.equal(getChatInputHelperText(true), "正在接收流式回复，完成后可继续追问。");
+  assert.equal(
+    getChatInputHelperText(true, "正在连接工作台"),
+    "正在连接工作台，稍后可继续发送。"
+  );
+  assert.equal(
+    getChatInputHelperText(true, "工作台连接失败"),
+    "工作台连接失败，重试成功后可继续发送。"
+  );
 });
 
 test("getChatInputClearTitle explains the clear draft action", () => {

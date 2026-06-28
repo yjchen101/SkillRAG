@@ -29,7 +29,7 @@ export function ChatInput({
   const countLabel = getChatInputCountLabel(value);
   const showClearButton = shouldShowChatInputClear(value, disabled);
   const clearTitle = getChatInputClearTitle();
-  const helperText = getChatInputHelperText(disabled);
+  const helperText = getChatInputHelperText(disabled, disabledReason);
   const sendTitle = getChatInputSendTitle({ disabled, disabledReason, value });
 
   useLayoutEffect(() => {
