@@ -37,6 +37,22 @@ export function getRawMessageRoleLabel(role: "user" | "assistant") {
   return role === "user" ? "用户" : "助手";
 }
 
+export function getRawMessageCardTitle({
+  index,
+  total,
+  role,
+  toolCount
+}: {
+  index: number;
+  total: number;
+  role: "user" | "assistant";
+  toolCount: number;
+}) {
+  return `${getRawMessageIndexLabel({ index, total })} · ${getRawMessageRoleLabel(
+    role
+  )} · ${getRawMessageToolLabel(toolCount)}`;
+}
+
 export function getRawMessageEmptyText() {
   return "当前会话还没有消息，发送后会在这里显示原始消息";
 }

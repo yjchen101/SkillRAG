@@ -6,6 +6,7 @@ import { useEffect, useMemo, useState } from "react";
 import { hasActiveFilter } from "@/lib/filterControls";
 import {
   getMessagePreview,
+  getRawMessageCardTitle,
   getRawMessageEmptyText,
   getRawMessageIndexLabel,
   getRawMessageRoleLabel,
@@ -320,6 +321,12 @@ export function Sidebar() {
             <div
               className="rounded-2xl border border-[var(--color-line)] bg-white/60 px-3 py-2"
               key={message.id}
+              title={getRawMessageCardTitle({
+                index,
+                total: messages.length,
+                role: message.role,
+                toolCount: message.toolCalls.length
+              })}
             >
               <div className="mb-1 flex items-center justify-between text-xs uppercase tracking-[0.2em] text-[var(--color-ink-soft)]">
                 <span>

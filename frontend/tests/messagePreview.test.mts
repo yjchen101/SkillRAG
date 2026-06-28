@@ -3,6 +3,7 @@ import test from "node:test";
 
 import {
   getMessagePreview,
+  getRawMessageCardTitle,
   getRawMessageEmptyText,
   getRawMessageIndexLabel,
   getRawMessageRoleLabel,
@@ -54,6 +55,13 @@ test("getRawMessageToolLabel describes tool usage in Chinese", () => {
 test("getRawMessageRoleLabel localizes raw message roles", () => {
   assert.equal(getRawMessageRoleLabel("user"), "用户");
   assert.equal(getRawMessageRoleLabel("assistant"), "助手");
+});
+
+test("getRawMessageCardTitle summarizes raw message metadata", () => {
+  assert.equal(
+    getRawMessageCardTitle({ index: 1, total: 3, role: "assistant", toolCount: 2 }),
+    "#2 · 助手 · 2 个工具"
+  );
 });
 
 test("getRawMessageEmptyText explains when raw messages appear", () => {
