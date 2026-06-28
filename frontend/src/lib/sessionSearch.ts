@@ -35,6 +35,10 @@ export function getSessionSearchClearTitle() {
   return "清空会话搜索条件";
 }
 
+export function getSessionSearchInputTitle() {
+  return "按会话标题筛选列表";
+}
+
 export function getSidebarSectionLabels() {
   return {
     sessions: "会话",

@@ -28,6 +28,7 @@ import {
   getSessionFilterCountLabel,
   getSessionSearchClearTitle,
   getSessionSearchEmptyMessage,
+  getSessionSearchInputTitle,
   getSidebarSectionLabels
 } from "@/lib/sessionSearch";
 import { useAppStore } from "@/lib/store";
@@ -166,6 +167,7 @@ export function Sidebar() {
           className="min-w-0 flex-1 bg-transparent text-[var(--color-ink)] outline-none placeholder:text-[var(--color-ink-soft)]"
           onChange={(event) => setSessionFilter(event.target.value)}
           placeholder="搜索会话标题"
+          title={getSessionSearchInputTitle()}
           type="search"
           value={sessionFilter}
         />

@@ -5,6 +5,7 @@ import {
   getSessionFilterCountLabel,
   getSessionSearchClearTitle,
   getSessionSearchEmptyMessage,
+  getSessionSearchInputTitle,
   getSidebarSectionLabels
 } from "../src/lib/sessionSearch.ts";
 
@@ -40,6 +41,10 @@ test("getSessionFilterCountLabel reports filtered session totals", () => {
 
 test("getSessionSearchClearTitle explains the clear filter action", () => {
   assert.equal(getSessionSearchClearTitle(), "清空会话搜索条件");
+});
+
+test("getSessionSearchInputTitle explains the search field", () => {
+  assert.equal(getSessionSearchInputTitle(), "按会话标题筛选列表");
 });
 
 test("getSidebarSectionLabels localizes visible sidebar labels", () => {
